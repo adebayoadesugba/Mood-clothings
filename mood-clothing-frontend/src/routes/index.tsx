@@ -43,7 +43,7 @@ function Home() {
               Elevate your wardrobe and embrace your unique elegance with every click.
             </p>
             <Link
-              to="/shop/$gender"
+              to="/collection"
               params={{ gender: "women" }}
               className="mt-8 inline-flex items-center gap-2 border border-background/60 bg-background/10 px-6 py-3 text-xs uppercase tracking-widest backdrop-blur transition-transform hover:scale-[1.02]"
             >
@@ -83,7 +83,7 @@ function Home() {
           {featured.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
         <div className="mt-10 text-center">
-          <Link to="/shop/$gender" params={{ gender: "women" }} className="inline-flex items-center gap-2 border border-hairline px-6 py-3 text-[11px] uppercase tracking-widest hover:border-foreground">
+          <Link to="/new-arrivals" params={{ gender: "women" }} className="inline-flex items-center gap-2 border border-hairline px-6 py-3 text-[11px] uppercase tracking-widest hover:border-foreground">
             See More Products <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>

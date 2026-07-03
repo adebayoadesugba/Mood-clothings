@@ -12,10 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as NewArrivalsRouteImport } from './routes/new-arrivals'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as CustomDesignRouteImport } from './routes/custom-design'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CollectionRouteImport } from './routes/collection'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -38,6 +40,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NewArrivalsRoute = NewArrivalsRouteImport.update({
+  id: '/new-arrivals',
+  path: '/new-arrivals',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HelpRoute = HelpRouteImport.update({
   id: '/help',
   path: '/help',
@@ -56,6 +63,11 @@ const CustomDesignRoute = CustomDesignRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CollectionRoute = CollectionRouteImport.update({
+  id: '/collection',
+  path: '/collection',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutRoute = CheckoutRouteImport.update({
@@ -93,10 +105,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/checkout': typeof CheckoutRoute
+  '/collection': typeof CollectionRoute
   '/contact': typeof ContactRoute
   '/custom-design': typeof CustomDesignRoute
   '/faq': typeof FaqRoute
   '/help': typeof HelpRoute
+  '/new-arrivals': typeof NewArrivalsRoute
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wishlist': typeof WishlistRoute
@@ -108,10 +122,12 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/checkout': typeof CheckoutRoute
+  '/collection': typeof CollectionRoute
   '/contact': typeof ContactRoute
   '/custom-design': typeof CustomDesignRoute
   '/faq': typeof FaqRoute
   '/help': typeof HelpRoute
+  '/new-arrivals': typeof NewArrivalsRoute
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wishlist': typeof WishlistRoute
@@ -124,10 +140,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/checkout': typeof CheckoutRoute
+  '/collection': typeof CollectionRoute
   '/contact': typeof ContactRoute
   '/custom-design': typeof CustomDesignRoute
   '/faq': typeof FaqRoute
   '/help': typeof HelpRoute
+  '/new-arrivals': typeof NewArrivalsRoute
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wishlist': typeof WishlistRoute
@@ -141,10 +159,12 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/checkout'
+    | '/collection'
     | '/contact'
     | '/custom-design'
     | '/faq'
     | '/help'
+    | '/new-arrivals'
     | '/privacy'
     | '/sitemap.xml'
     | '/wishlist'
@@ -156,10 +176,12 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/checkout'
+    | '/collection'
     | '/contact'
     | '/custom-design'
     | '/faq'
     | '/help'
+    | '/new-arrivals'
     | '/privacy'
     | '/sitemap.xml'
     | '/wishlist'
@@ -171,10 +193,12 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/checkout'
+    | '/collection'
     | '/contact'
     | '/custom-design'
     | '/faq'
     | '/help'
+    | '/new-arrivals'
     | '/privacy'
     | '/sitemap.xml'
     | '/wishlist'
@@ -187,10 +211,12 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   CheckoutRoute: typeof CheckoutRoute
+  CollectionRoute: typeof CollectionRoute
   ContactRoute: typeof ContactRoute
   CustomDesignRoute: typeof CustomDesignRoute
   FaqRoute: typeof FaqRoute
   HelpRoute: typeof HelpRoute
+  NewArrivalsRoute: typeof NewArrivalsRoute
   PrivacyRoute: typeof PrivacyRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WishlistRoute: typeof WishlistRoute
@@ -221,6 +247,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/new-arrivals': {
+      id: '/new-arrivals'
+      path: '/new-arrivals'
+      fullPath: '/new-arrivals'
+      preLoaderRoute: typeof NewArrivalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/help': {
       id: '/help'
       path: '/help'
@@ -247,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/collection': {
+      id: '/collection'
+      path: '/collection'
+      fullPath: '/collection'
+      preLoaderRoute: typeof CollectionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout': {
@@ -310,10 +350,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   CheckoutRoute: CheckoutRoute,
+  CollectionRoute: CollectionRoute,
   ContactRoute: ContactRoute,
   CustomDesignRoute: CustomDesignRoute,
   FaqRoute: FaqRoute,
   HelpRoute: HelpRoute,
+  NewArrivalsRoute: NewArrivalsRoute,
   PrivacyRoute: PrivacyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WishlistRoute: WishlistRoute,
