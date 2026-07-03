@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowUpRight, Play } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ArrowUpRight, Play, ChevronLeft, ChevronRight } from "lucide-react";
+import { useMemo, useState, useRef } from "react";
 import { ProductCard } from "@/components/ProductCard";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import { PRODUCTS, CATEGORIES, SUBCATEGORIES } from "@/lib/products";
@@ -13,6 +13,7 @@ const FILTERS = ["All", "New Arrival", "Best Seller", "Recommendation"] as const
 
 function Home() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   const featured = useMemo(() => {
     let list = PRODUCTS;
@@ -21,6 +22,17 @@ function Home() {
     else if (filter === "Recommendation") list = list.filter((p) => p.rating >= 4.7);
     return list.slice(0, 6);
   }, [filter]);
+
+  const scroll = (direction: "left" | "right") => {
+    if (carouselRef.current) {
+      // Dynamic scroll amount matches roughly one card viewport length
+      const scrollAmount = carouselRef.current.clientWidth / 2;
+      carouselRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 md:px-8">
@@ -111,32 +123,57 @@ function Home() {
           </div>
         </div>
         <div className="mt-8 text-center">
-          <Link to="/shop/$gender" params={{ gender: "women" }} className="inline-flex items-center gap-2 border border-foreground bg-background px-6 py-3 text-[11px] uppercase tracking-widest hover:bg-foreground hover:text-background">
+          <Link to="/new-arrivals" params={{ gender: "women" }} className="inline-flex items-center gap-2 border border-foreground bg-background px-6 py-3 text-[11px] uppercase tracking-widest hover:bg-foreground hover:text-background">
             See Our New Collection <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="py-12">
-        <h2 className="mb-8 text-center font-display text-3xl md:text-4xl">Top Fashion Category</h2>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+      {/* Categories Carousel (Scaled to precisely match ProductCard ratios) */}
+      <section className="py-12 relative">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="font-display text-3xl md:text-4xl">Top Fashion Category</h2>
+          
+          <div className="flex gap-2">
+            <button 
+              onClick={() => scroll("left")}
+              className="grid h-10 w-10 place-items-center border border-hairline bg-background text-foreground transition-colors hover:border-foreground active:scale-95"
+              aria-label="Previous Category"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button 
+              onClick={() => scroll("right")}
+              className="grid h-10 w-10 place-items-center border border-hairline bg-background text-foreground transition-colors hover:border-foreground active:scale-95"
+              aria-label="Next Category"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* The width fractions mirror the standard responsive sizing ratios of the ProductCard grid elements */}
+        <div 
+          ref={carouselRef}
+          className="flex gap-4 md:gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
           {SUBCATEGORIES.map((s, i) => (
             <Link
               key={s.slug}
               to="/shop/$gender/$sub"
               params={{ gender: CATEGORIES[i % CATEGORIES.length].slug, sub: s.slug }}
-              className="group block overflow-hidden rounded-md bg-secondary"
+              className="group block overflow-hidden rounded-md bg-secondary snap-start flex-shrink-0 w-[calc(50%-8px)] md:w-[calc(33.333%-16px)] lg:w-[calc(25%-18px)]"
             >
-              <div className="overflow-hidden">
+              <div className="overflow-hidden aspect-[3/4]">
                 <img
                   src={PRODUCTS.find((p) => p.sub === s.slug)?.images[0] ?? PRODUCTS[0].images[0]}
                   alt={s.label}
                   loading="lazy"
-                  className="product-img transition-transform duration-500 group-hover:scale-105"
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 will-change-transform"
                 />
               </div>
-              <div className="p-3 text-center text-[11px] uppercase tracking-widest">{s.label}</div>
+              <div className="p-3 text-center text-[11px] uppercase tracking-widest truncate">{s.label}</div>
             </Link>
           ))}
         </div>

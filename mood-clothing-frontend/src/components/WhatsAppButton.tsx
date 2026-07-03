@@ -1,7 +1,7 @@
 import { MessageCircle } from "lucide-react";
 
 const WA_NUMBER = "2348078457247"; // Nigeria +234
-const WA_MSG = encodeURIComponent("Hi Glamora, I have a question about your collection.");
+const WA_MSG = encodeURIComponent("Hi Mood Clothings, I have a question about your collection.");
 
 export function WhatsAppButton() {
   return (

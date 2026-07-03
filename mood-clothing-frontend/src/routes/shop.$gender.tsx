@@ -34,12 +34,20 @@ function ShopGender() {
         <span className="text-xs uppercase tracking-widest text-muted-foreground">{products.length} items</span>
       </div>
       <div className="mt-6 flex flex-wrap gap-2">
+        <Link
+          to="/shop/$gender"
+          params={{ gender }}
+          aria-current="page"
+          className="border border-foreground bg-foreground px-4 py-2 text-[11px] uppercase tracking-widest text-background"
+        >
+          All
+        </Link>
         {SUBCATEGORIES.map((s) => (
           <Link
             key={s.slug}
             to="/shop/$gender/$sub"
             params={{ gender, sub: s.slug }}
-            className="border border-hairline px-4 py-2 text-[11px] uppercase tracking-widest hover:border-foreground"
+            className="border border-hairline px-4 py-2 text-[11px] uppercase tracking-widest transition-colors hover:border-foreground"
           >
             {s.label}
           </Link>

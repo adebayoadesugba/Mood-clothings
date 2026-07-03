@@ -38,16 +38,27 @@ function ShopSub() {
         <span className="text-xs uppercase tracking-widest text-muted-foreground">{products.length} items</span>
       </div>
       <div className="mt-6 flex flex-wrap gap-2">
-        {SUBCATEGORIES.map((s) => (
-          <Link
-            key={s.slug}
-            to="/shop/$gender/$sub"
-            params={{ gender, sub: s.slug }}
-            className={`border px-4 py-2 text-[11px] uppercase tracking-widest ${s.slug === sub ? "border-foreground bg-foreground text-background" : "border-hairline hover:border-foreground"}`}
-          >
-            {s.label}
-          </Link>
-        ))}
+        <Link
+          to="/shop/$gender"
+          params={{ gender }}
+          className="border border-hairline px-4 py-2 text-[11px] uppercase tracking-widest hover:border-foreground"
+        >
+          All
+        </Link>
+        {SUBCATEGORIES.map((s) => {
+          const active = s.slug === sub;
+          return (
+            <Link
+              key={s.slug}
+              to="/shop/$gender/$sub"
+              params={{ gender, sub: s.slug }}
+              aria-current={active ? "page" : undefined}
+              className={`border px-4 py-2 text-[11px] uppercase tracking-widest transition-colors ${active ? "border-foreground bg-foreground text-background" : "border-hairline hover:border-foreground"}`}
+            >
+              {s.label}
+            </Link>
+          );
+        })}
       </div>
       <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
         {products.map((p) => <ProductCard key={p.id} product={p} />)}
