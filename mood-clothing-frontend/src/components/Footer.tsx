@@ -7,10 +7,10 @@ export function Footer() {
         <div>
           <h4 className="mb-4 text-xs uppercase tracking-widest">General</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li><Link to="/">About Us</Link></li>
-            <li><a href="#">Blog</a></li>
-            <li><a href="#">How it Works</a></li>
-            <li><a href="#">Contact Us</a></li>
+            <li><Link to="/about">About Us</Link></li>
+            <li><Link to="/faq">FAQ</Link></li>
+            <li><Link to="/help">How it Works</Link></li>
+            <li><Link to="/contact">Contact Us</Link></li>
           </ul>
         </div>
         <div>
@@ -25,10 +25,10 @@ export function Footer() {
         <div>
           <h4 className="mb-4 text-xs uppercase tracking-widest">Customer Service</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li><a href="#">FAQ</a></li>
-            <li><a href="#">Help &amp; Support</a></li>
-            <li><a href="#">Billing Cycle</a></li>
-            <li><a href="#">Privacy Policy</a></li>
+            <li><Link to="/faq">FAQ</Link></li>
+            <li><Link to="/help">Help &amp; Support</Link></li>
+            <li><Link to="/billing">Billing Cycle</Link></li>
+            <li><Link to="/privacy">Privacy Policy</Link></li>
           </ul>
         </div>
         <div>
