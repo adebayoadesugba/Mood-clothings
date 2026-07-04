@@ -12,7 +12,7 @@ export const Route = createFileRoute("/checkout")({
 
 function Checkout() {
   const store = useStore();
-  const { cart, cartTotal, user } = store;
+  const { cart, cartTotal, user, openLogin, clearCart, closeCart } = store;
   
   const [isOrdered, setIsOrdered] = useState(false);
   const [showContinueButton, setShowContinueButton] = useState(false);
@@ -30,7 +30,7 @@ function Checkout() {
     if (isOrdered) {
       timer = setTimeout(() => {
         setShowContinueButton(true);
-      }, 1000);
+      }, 5000); // Changed back to 5000ms as per your original requirement
     }
     return () => {
       if (timer) clearTimeout(timer);
@@ -43,7 +43,8 @@ function Checkout() {
     // 1. Swap visual container presentation state instantly
     setIsOrdered(true);
     
-    // 2. Clear out local state caching layers immediately
+    // 2. Clear out local state caching layers immediately matching your store's key
+    localStorage.removeItem("glamora-store-v1");
     localStorage.removeItem("cart");
     localStorage.removeItem("mood clothings-cart");
     localStorage.removeItem("mood-cart");
@@ -63,21 +64,50 @@ function Checkout() {
     });
 
     // 3. Force-close the drawer and manually mutate global store arrays
-    // This instantly updates the badge indicator and resets the list layout counters
     try {
-      if (typeof store.closeCart === "function") store.closeCart();
-      if (typeof store.clearCart === "function") store.clearCart();
+      if (typeof closeCart === "function") closeCart();
+      if (typeof clearCart === "function") clearCart();
     } catch (err) {
       console.warn("Global clean step fallback sequence activated");
     }
-
-    // Direct store memory manipulation engine drop
-    if ((store as any).setState) {
-      try {
-        (store as any).setState({ cart: [], cartTotal: 0, cartOpen: false });
-      } catch (err) {}
-    }
   };
+
+  // Guard Check 1: Empty Cart View
+  if (cart.length === 0 && !isOrdered) {
+    return (
+      <div className="mx-auto max-w-[1200px] px-4 py-8 md:px-8">
+        <Breadcrumbs items={[{ label: "Home", to: "/" }, { label: "Checkout" }]} />
+        <h1 className="mt-6 font-display text-4xl md:text-5xl">Checkout</h1>
+        <div className="mt-16 text-center">
+          <h1 className="font-display text-3xl">Your cart is empty</h1>
+          <button onClick={() => window.location.href = "/"} className="mt-6 inline-block border border-foreground px-6 py-3 text-xs uppercase tracking-widest">
+            Continue shopping
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Guard Check 2: Login Guard Screen for Unauthenticated Users
+  if (!user && !isOrdered) {
+    return (
+      <div className="mx-auto max-w-[1200px] px-4 py-8 md:px-8">
+        <Breadcrumbs items={[{ label: "Home", to: "/" }, { label: "Checkout" }]} />
+        <h1 className="mt-6 font-display text-4xl md:text-5xl">Checkout</h1>
+        <div className="mt-16 text-center max-w-sm mx-auto">
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Please log in or create an account to complete your secure checkout process.
+          </p>
+          <button
+            onClick={openLogin}
+            className="mt-6 inline-block w-full bg-foreground text-background py-3 text-xs uppercase tracking-widest transition-transform hover:scale-[1.01]"
+          >
+            Sign In / Register
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-8 md:px-8">
@@ -106,13 +136,6 @@ function Checkout() {
               </button>
             </div>
           </div>
-        </div>
-      ) : cart.length === 0 ? (
-        <div className="mt-16 text-center">
-          <h1 className="font-display text-3xl">Your cart is empty</h1>
-          <button onClick={() => window.location.href = "/"} className="mt-6 inline-block border border-foreground px-6 py-3 text-xs uppercase tracking-widest">
-            Continue shopping
-          </button>
         </div>
       ) : (
         <form onSubmit={handlePlaceOrder} className="mt-8 grid gap-12 lg:grid-cols-[1fr_400px]">

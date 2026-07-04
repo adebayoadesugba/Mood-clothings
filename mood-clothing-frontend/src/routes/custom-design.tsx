@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Upload, X, ImagePlus } from "lucide-react";
 import { useState } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/custom-design")({
@@ -15,14 +16,36 @@ export const Route = createFileRoute("/custom-design")({
 });
 
 function CustomDesign() {
+  const { user, openLogin } = useStore(); // Grab user authentication values natively
   const [files, setFiles] = useState<{ name: string; url: string }[]>([]);
   const [dragging, setDragging] = useState(false);
   const [notes, setNotes] = useState("");
 
   const addFiles = (list: FileList | null) => {
+    // Intercept file loading if the user has no session cache entry
+    if (!user) {
+      toast.error("Please sign in or create an account to upload design materials.");
+      openLogin();
+      return;
+    }
     if (!list) return;
     const next = Array.from(list).slice(0, 6).map((f) => ({ name: f.name, url: URL.createObjectURL(f) }));
     setFiles((prev) => [...prev, ...next].slice(0, 6));
+  };
+
+  const handleSubmitBrief = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Guard Check: Final security boundary validation fallback
+    if (!user) {
+      toast.error("Authentication required to submit custom briefs.");
+      openLogin();
+      return;
+    }
+
+    toast.success("Design brief submitted — our atelier will be in touch.");
+    setFiles([]);
+    setNotes("");
   };
 
   return (
@@ -72,17 +95,14 @@ function CustomDesign() {
           )}
         </div>
 
-        <form
-          onSubmit={(e) => { e.preventDefault(); toast.success("Design brief submitted — our atelier will be in touch."); setFiles([]); setNotes(""); }}
-          className="space-y-4"
-        >
+        <form onSubmit={handleSubmitBrief} className="space-y-4">
           <div>
             <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Full Name</label>
-            <input required className="mt-1 w-full border-b border-hairline bg-transparent py-2 text-sm outline-none focus:border-foreground" />
+            <input required defaultValue={user?.name ?? ""} className="mt-1 w-full border-b border-hairline bg-transparent py-2 text-sm outline-none focus:border-foreground" />
           </div>
           <div>
             <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Email</label>
-            <input required type="email" className="mt-1 w-full border-b border-hairline bg-transparent py-2 text-sm outline-none focus:border-foreground" />
+            <input required type="email" defaultValue={user?.email ?? ""} className="mt-1 w-full border-b border-hairline bg-transparent py-2 text-sm outline-none focus:border-foreground" />
           </div>
           <div>
             <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Notes</label>

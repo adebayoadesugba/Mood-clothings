@@ -138,6 +138,20 @@ export function Header() {
             ))}
             <Link to="/custom-design" onClick={() => setMobileOpen(false)} className="block py-3 text-sm uppercase tracking-widest hairline-b">Custom Design</Link>
             <Link to="/wishlist" onClick={() => setMobileOpen(false)} className="block py-3 text-sm uppercase tracking-widest hairline-b">Wishlist</Link>
+            
+            {/* MOBILE ONLY LINK ADDITIONS */}
+            <Link to="/about" onClick={() => setMobileOpen(false)} className="block py-3 text-sm uppercase tracking-widest hairline-b text-muted-foreground hover:text-foreground transition-colors">
+              About
+            </Link>
+            <Link to="/contact" onClick={() => setMobileOpen(false)} className="block py-3 text-sm uppercase tracking-widest hairline-b text-muted-foreground hover:text-foreground transition-colors">
+              Contact
+            </Link>
+            <Link to="/help" onClick={() => setMobileOpen(false)} className="block py-3 text-sm uppercase tracking-widest hairline-b text-muted-foreground hover:text-foreground transition-colors">
+              Help
+            </Link>
+            <Link to="/faq" onClick={() => setMobileOpen(false)} className="block py-3 text-sm uppercase tracking-widest hairline-b text-muted-foreground hover:text-foreground transition-colors">
+              FAQ
+            </Link>
           </nav>
         </aside>
       </div>

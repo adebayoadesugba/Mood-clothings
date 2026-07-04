@@ -10,14 +10,29 @@ export const Route = createFileRoute("/wishlist")({
 });
 
 function WishlistPage() {
-  const { wishlist } = useStore();
+  const { wishlist, user, openLogin } = useStore();
   const items = wishlist.map(findProduct).filter((p): p is NonNullable<typeof p> => !!p);
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-8">
       <Breadcrumbs items={[{ label: "Home", to: "/" }, { label: "Wishlist" }]} />
       <h1 className="mt-6 font-display text-4xl md:text-5xl">My Wishlist</h1>
-      {items.length === 0 ? (
+      
+      {!user ? (
+        /* Guest Authentication Screen */
+        <div className="mt-16 text-center max-w-sm mx-auto">
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Please log in or create an account to view and save your personal items to your wishlist.
+          </p>
+          <button
+            onClick={openLogin}
+            className="mt-6 inline-block w-full bg-foreground text-background py-3 text-xs uppercase tracking-widest transition-transform hover:scale-[1.01]"
+          >
+            Sign In / Register
+          </button>
+        </div>
+      ) : items.length === 0 ? (
+        /* Authenticated but Empty State */
         <div className="mt-16 text-center">
           <p className="text-sm text-muted-foreground">Your wishlist is empty.</p>
           <Link to="/" className="mt-6 inline-block border border-foreground px-6 py-3 text-xs uppercase tracking-widest hover:bg-foreground hover:text-background">
@@ -25,6 +40,7 @@ function WishlistPage() {
           </Link>
         </div>
       ) : (
+        /* Authenticated Wishlist Grid View */
         <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
           {items.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
