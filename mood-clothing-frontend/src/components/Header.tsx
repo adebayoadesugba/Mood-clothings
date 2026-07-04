@@ -61,21 +61,25 @@ export function Header() {
             <img src="images/MOOD CLOTH.png" alt="Mood Clothing" className="h-10 w-30 md:h-10" />
           </Link>
           <div className="flex items-center gap-1">
-            <button aria-label="Search" onClick={openSearch} className="grid h-9 w-9 place-items-center hover:bg-secondary">
+            <button aria-label="Search" onClick={openSearch} className="grid h-9 w-5 place-items-center hover:bg-secondary">
               <Search className="h-4 w-4" />
             </button>
-            <Link to="/wishlist" aria-label="Wishlist" className="relative grid h-9 w-9 place-items-center hover:bg-secondary">
-              <Heart className="h-4 w-4" />
-              {wishlist.length > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[10px] text-background tabular-nums">
-                  {wishlist.length}
-                </span>
-              )}
-            </Link>
-            <button aria-label={user ? user.name : "Account"} onClick={openLogin} className="grid h-9 w-9 place-items-center hover:bg-secondary">
+            <Link 
+                to="/wishlist" 
+                aria-label="Wishlist" 
+                className="hidden md:grid relative h-9 w-9 place-items-center hover:bg-secondary"
+              >
+                <Heart className="h-4 w-4" />
+                {wishlist.length > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[10px] text-background tabular-nums">
+                    {wishlist.length}
+                  </span>
+                )}
+        </Link>
+            <button aria-label={user ? user.name : "Account"} onClick={openLogin} className="grid h-9 w-5 place-items-center hover:bg-secondary">
               <User className="h-4 w-4" />
             </button>
-            <button aria-label="Cart" onClick={openCart} className="relative grid h-9 w-9 place-items-center hover:bg-secondary">
+            <button aria-label="Cart" onClick={openCart} className="relative grid h-9 w-5 place-items-center hover:bg-secondary">
               <ShoppingBag className="h-4 w-4" />
               {cartCount > 0 && (
                 <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[10px] text-background tabular-nums">

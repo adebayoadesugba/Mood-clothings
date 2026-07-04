@@ -7,8 +7,8 @@ import { bySub, CATEGORIES, SUBCATEGORIES, type Category, type SubCategory } fro
 export const Route = createFileRoute("/shop/$gender/$sub")({
   head: ({ params }) => ({
     meta: [
-      { title: `${cap(params.gender)} — ${cap(params.sub)} — Glamora` },
-      { name: "description", content: `${cap(params.gender)} ${params.sub} at Glamora.` },
+      { title: `${cap(params.gender)} — ${cap(params.sub)} — Mood Clothings` },
+      { name: "description", content: `${cap(params.gender)} ${params.sub} at Mood Clothings.` },
     ],
   }),
   loader: ({ params }) => {

@@ -7,9 +7,9 @@ import { byCategory, CATEGORIES, SUBCATEGORIES, type Category } from "@/lib/prod
 export const Route = createFileRoute("/shop/$gender")({
   head: ({ params }) => ({
     meta: [
-      { title: `${cap(params.gender)} — Glamora` },
-      { name: "description", content: `Shop the latest ${params.gender} collection from Glamora — jeans, tops, joggers, polos, shirts, and accessories.` },
-      { property: "og:title", content: `${cap(params.gender)} — Glamora` },
+      { title: `${cap(params.gender)} — Mood Clothings` },
+      { name: "description", content: `Shop the latest ${params.gender} collection from Mood Clothings — jeans, tops, joggers, polos, shirts, and accessories.` },
+      { property: "og:title", content: `${cap(params.gender)} — Mood Clothings` },
     ],
   }),
   loader: ({ params }) => {

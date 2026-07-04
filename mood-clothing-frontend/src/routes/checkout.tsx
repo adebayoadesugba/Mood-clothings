@@ -6,7 +6,7 @@ import { useStore } from "@/lib/store";
 import { CheckCircle } from "lucide-react";
 
 export const Route = createFileRoute("/checkout")({
-  head: () => ({ meta: [{ title: "Checkout — Glamora" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Checkout — Mood Clothings" }, { name: "robots", content: "noindex" }] }),
   component: Checkout,
 });
 
@@ -44,7 +44,7 @@ function Checkout() {
     setIsOrdered(true);
     
     // 2. Clear out local state caching layers immediately matching your store's key
-    localStorage.removeItem("glamora-store-v1");
+    localStorage.removeItem("moon clothings-store-v1");
     localStorage.removeItem("cart");
     localStorage.removeItem("mood clothings-cart");
     localStorage.removeItem("mood-cart");

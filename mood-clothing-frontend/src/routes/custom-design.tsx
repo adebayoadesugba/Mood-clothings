@@ -8,8 +8,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/custom-design")({
   head: () => ({
     meta: [
-      { title: "Custom Design — Glamora" },
-      { name: "description", content: "Upload your own design and let the Glamora atelier bring it to life." },
+      { title: "Custom Design — Mood Clothings" },
+      { name: "description", content: "Upload your own design and let the Mood Clothings atelier bring it to life." },
     ],
   }),
   component: CustomDesign,

@@ -4,10 +4,10 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy Policy — Glamora" },
-      { name: "description", content: "How Glamora collects, uses, and protects your personal information when you shop with us." },
-      { property: "og:title", content: "Privacy Policy — Glamora" },
-      { property: "og:description", content: "Glamora's commitment to your privacy." },
+      { title: "Privacy Policy — Mood Clothings" },
+      { name: "description", content: "How Mood Clothings collects, uses, and protects your personal information when you shop with us." },
+      { property: "og:title", content: "Privacy Policy — Mood Clothings" },
+      { property: "og:description", content: "Mood Clothings' commitment to your privacy." },
     ],
   }),
   component: PrivacyPage,
@@ -25,8 +25,8 @@ function PrivacyPage() {
 
       <article className="prose prose-neutral mt-10 max-w-none text-sm leading-7 text-foreground/90">
         <p>
-          Glamora ("we", "us", "our") respects your privacy. This policy explains what information we
-          collect, how we use it, and the choices you have. By using glamora.shop you agree to the
+          Mood Clothings ("we", "us", "our") respects your privacy. This policy explains what information we
+          collect, how we use it, and the choices you have. By using moodclothings.shop you agree to the
           practices described here.
         </p>
 
@@ -88,8 +88,8 @@ function PrivacyPage() {
 
         <h2 className="mt-10 font-display text-2xl">9. Contact</h2>
         <p className="mt-3">
-          Questions? Email <a href="mailto:privacy@glamora.shop">privacy@glamora.shop</a> or write to
-          Glamora, 14 Elegushi Way, Lekki, Lagos, Nigeria.
+          Questions? Email <a href="mailto:privacy@moodclothings.shop">privacy@moodclothings.shop</a> or write to
+          Mood Clothings, 14 Elegushi Way, Lekki, Lagos, Nigeria.
         </p>
       </article>
     </div>
