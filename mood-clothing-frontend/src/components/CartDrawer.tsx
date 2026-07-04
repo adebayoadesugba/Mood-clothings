@@ -13,6 +13,10 @@ export function CartDrawer() {
     return () => { document.body.style.overflow = ""; };
   }, [cartOpen]);
 
+  // SAFEGUARD: If someone manually cleared local caches during checkout checkout,
+  // ensure this drawer layout handles the empty state seamlessly.
+  const displayCart = cart || [];
+
   return (
     <div className={cn("fixed inset-0 z-50", cartOpen ? "pointer-events-auto" : "pointer-events-none")} aria-hidden={!cartOpen}>
       <div
@@ -27,17 +31,17 @@ export function CartDrawer() {
         style={{ willChange: "transform" }}
       >
         <div className="flex items-center justify-between p-5 hairline-b">
-          <h3 className="text-sm uppercase tracking-widest">My Cart ({cart.length})</h3>
+          <h3 className="text-sm uppercase tracking-widest">My Cart ({displayCart.length})</h3>
           <button onClick={closeCart} aria-label="Close cart"><X className="h-5 w-5" /></button>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {cart.length === 0 ? (
+          {displayCart.length === 0 ? (
             <div className="grid h-full place-items-center p-8 text-center text-sm text-muted-foreground">
               Your cart is empty.
             </div>
           ) : (
             <ul className="divide-y divide-[color:var(--hairline)]">
-              {cart.map((item) => {
+              {displayCart.map((item) => {
                 const p = findProduct(item.id);
                 if (!p) return null;
                 return (
@@ -54,7 +58,7 @@ export function CartDrawer() {
                             </div>
                           )}
                         </div>
-                        <div className="shrink-0 text-sm tabular-nums">${p.price * item.qty}</div>
+                          <div className="shrink-0 text-sm tabular-nums">${p.price * item.qty}</div>
                       </div>
                       <div className="mt-auto flex items-center justify-between">
                         <div className="flex items-center border border-hairline">
@@ -73,7 +77,7 @@ export function CartDrawer() {
             </ul>
           )}
         </div>
-        {cart.length > 0 && (
+        {displayCart.length > 0 && (
           <div className="border-t border-hairline p-5">
             <div className="mb-4 flex items-center justify-between text-sm">
               <span className="uppercase tracking-widest">Subtotal</span>

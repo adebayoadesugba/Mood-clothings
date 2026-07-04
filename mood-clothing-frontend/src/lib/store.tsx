@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { findProduct } from "./products";
+import { toast } from "sonner"; // Imported toast to handle the 3-second popup alert cleanly
 
 type CartItem = { id: string; qty: number; color?: string };
 type StoreState = {
@@ -23,6 +24,7 @@ type Ctx = StoreState & {
   openCart: () => void; closeCart: () => void;
   openLogin: () => void; closeLogin: () => void;
   openSearch: () => void; closeSearch: () => void;
+  clearCart: () => void;
   cartTotal: number;
   cartCount: number;
 };
@@ -64,13 +66,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     } catch { /* ignore */ }
   }, [state.cart, state.wishlist, state.recent, state.user]);
 
+  // FIXED: Keeps cartOpen completely untouched so drawer stays shut, then fires toast popup
   const addToCart = useCallback((id: string, color?: string, qty = 1) => {
+    const product = findProduct(id);
+    const productName = product ? product.name : "Item";
+
     setState((s) => {
       const existing = s.cart.find((c) => c.id === id && c.color === color);
       const cart = existing
         ? s.cart.map((c) => (c === existing ? { ...c, qty: c.qty + qty } : c))
         : [...s.cart, { id, qty, color }];
-      return { ...s, cart, cartOpen: true };
+      
+      // Removed cartOpen: true so it doesn't pop open automatically
+      return { ...s, cart };
+    });
+
+    // Displays the minimalist item update toast alert for exactly 3 seconds
+    toast.success(`${productName} has been added to cart`, {
+      duration: 3000,
     });
   }, []);
 
@@ -106,6 +119,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const openSearch = useCallback(() => setState((s) => ({ ...s, searchOpen: true })), []);
   const closeSearch = useCallback(() => setState((s) => ({ ...s, searchOpen: false })), []);
 
+  const clearCart = useCallback(() => {
+    setState((s) => ({ ...s, cart: [], cartOpen: false }));
+  }, []);
+
   const { cartTotal, cartCount } = useMemo(() => {
     let total = 0, count = 0;
     for (const item of state.cart) {
@@ -122,6 +139,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     addToCart, removeFromCart, setQty, toggleWishlist, trackView,
     setUser, logout,
     openCart, closeCart, openLogin, closeLogin, openSearch, closeSearch,
+    clearCart,
     cartTotal, cartCount,
   };
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

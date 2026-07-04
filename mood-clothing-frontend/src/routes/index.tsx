@@ -3,7 +3,8 @@ import { ArrowUpRight, Play, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState, useRef } from "react";
 import { ProductCard } from "@/components/ProductCard";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
-import { PRODUCTS, CATEGORIES, SUBCATEGORIES } from "@/lib/products";
+import { PRODUCTS as STATIC_PRODUCTS, CATEGORIES, SUBCATEGORIES, type Product } from "@/lib/products";
+import { useStore } from "@/lib/store"; // Fixed: Added missing import
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -14,18 +15,20 @@ const FILTERS = ["All", "New Arrival", "Best Seller", "Recommendation"] as const
 function Home() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
   const carouselRef = useRef<HTMLDivElement>(null);
+  
+  // Grab global tracking state
+  const { cart, recent, PRODUCTS = STATIC_PRODUCTS } = useStore(); 
 
   const featured = useMemo(() => {
     let list = PRODUCTS;
-    if (filter === "New Arrival") list = list.filter((p) => p.badge === "New");
-    else if (filter === "Best Seller") list = list.filter((p) => p.badge === "Best Seller");
-    else if (filter === "Recommendation") list = list.filter((p) => p.rating >= 4.7);
+    if (filter === "New Arrival") list = list.filter((p: Product) => p.badge === "New");
+    else if (filter === "Best Seller") list = list.filter((p: Product) => p.badge === "Best Seller");
+    else if (filter === "Recommendation") list = list.filter((p: Product) => p.rating >= 4.7);
     return list.slice(0, 6);
-  }, [filter]);
+  }, [filter, PRODUCTS]);
 
   const scroll = (direction: "left" | "right") => {
     if (carouselRef.current) {
-      // Dynamic scroll amount matches roughly one card viewport length
       const scrollAmount = carouselRef.current.clientWidth / 2;
       carouselRef.current.scrollBy({
         left: direction === "left" ? -scrollAmount : scrollAmount,
@@ -33,6 +36,25 @@ function Home() {
       });
     }
   };
+
+  // Fixed: Added strong typing for parameters to resolve implicitly 'any' compilation errors
+  const lookProducts = useMemo(() => {
+    const selectedIds = ["silhouette-puffer", "crystal-midi", "alia-boots"];
+    const filtered = PRODUCTS.filter((p: Product) => selectedIds.includes(p.id));
+    
+    return filtered.sort((a: Product, b: Product) => {
+      const scoreA = (cart.filter((item: { id: string }) => item.id === a.id).length * 3) + (recent.includes(a.id) ? 1 : 0);
+      const scoreB = (cart.filter((item: { id: string }) => item.id === b.id).length * 3) + (recent.includes(b.id) ? 1 : 0);
+      
+      if (scoreB === scoreA) {
+        return b.reviewCount - a.reviewCount;
+      }
+      
+      return scoreB - scoreA;
+    });
+  }, [cart, recent, PRODUCTS]);
+
+  const topProductInLook = lookProducts[0] || PRODUCTS[0];
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 md:px-8">
@@ -152,7 +174,6 @@ function Home() {
           </div>
         </div>
 
-        {/* The width fractions mirror the standard responsive sizing ratios of the ProductCard grid elements */}
         <div 
           ref={carouselRef}
           className="flex gap-4 md:gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -167,7 +188,7 @@ function Home() {
             >
               <div className="overflow-hidden aspect-[3/4]">
                 <img
-                  src={PRODUCTS.find((p) => p.sub === s.slug)?.images[0] ?? PRODUCTS[0].images[0]}
+                  src={STATIC_PRODUCTS.find((p) => p.sub === s.slug)?.images[0] ?? STATIC_PRODUCTS[0].images[0]}
                   alt={s.label}
                   loading="lazy"
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 will-change-transform"
@@ -182,32 +203,46 @@ function Home() {
       {/* Shop the look */}
       <section className="py-12">
         <div className="grid gap-8 md:grid-cols-[1fr_1fr]">
-          <div className="overflow-hidden rounded-md bg-secondary">
-            <img
-              src="https://images.unsplash.com/photo-1548126032-079a0fb0099d?w=900&h=1200&fit=crop&auto=format&q=75"
-              alt="Shop the look"
-              loading="lazy"
-              className="h-full max-h-[720px] w-full object-cover"
-            />
+          
+          {/* DYNAMIC BIG IMAGE */}
+          <div className="overflow-hidden rounded-md bg-secondary relative group">
+            <Link to="/product/$id" params={{ id: topProductInLook.id }}>
+              <img
+                src={topProductInLook.images[0]}
+                alt={`Featured look: ${topProductInLook.name}`}
+                loading="lazy"
+                className="h-full max-h-[720px] w-full object-cover transition-transform duration-700 group-hover:scale-105 will-change-transform"
+              />
+              <div className="absolute top-4 left-4 bg-foreground text-background text-[9px] uppercase tracking-widest px-3 py-1.5 rounded-sm">
+                Trending Piece
+              </div>
+            </Link>
           </div>
+
+          {/* Dynamic Ordered List */}
           <div>
             <h2 className="font-display text-2xl md:text-3xl">Item in This Look</h2>
+            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Sorted by popularity</p>
+            
             <ul className="mt-6 divide-y divide-[color:var(--hairline)]">
-              {PRODUCTS.filter((p) => ["silhouette-puffer", "crystal-midi", "alia-boots"].includes(p.id)).map((p) => (
+              {lookProducts.map((p) => (
                 <li key={p.id} className="flex items-center gap-4 py-4">
                   <Link to="/product/$id" params={{ id: p.id }}>
-                    <img src={p.images[0]} alt={p.name} className="h-20 w-16 object-cover" />
+                    <img src={p.images[0]} alt={p.name} className="h-20 w-16 object-cover border border-hairline" />
                   </Link>
                   <div className="min-w-0 flex-1">
-                    <Link to="/product/$id" params={{ id: p.id }} className="block truncate text-xs uppercase tracking-widest">
+                    <Link to="/product/$id" params={{ id: p.id }} className="block truncate text-xs uppercase tracking-widest font-medium">
                       {p.name}
                     </Link>
                     <div className="mt-1 text-sm tabular-nums">${p.price}</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
+                      {p.reviewCount} orders placed
+                    </div>
                   </div>
                   <Link
                     to="/product/$id"
                     params={{ id: p.id }}
-                    className="shrink-0 border border-hairline px-4 py-2 text-[10px] uppercase tracking-widest hover:border-foreground"
+                    className="shrink-0 border border-hairline px-4 py-2 text-[10px] uppercase tracking-widest hover:border-foreground transition-colors bg-background"
                   >
                     Add to Cart
                   </Link>
@@ -215,6 +250,7 @@ function Home() {
               ))}
             </ul>
           </div>
+          
         </div>
       </section>
 
