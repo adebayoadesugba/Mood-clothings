@@ -8,7 +8,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/custom-design")({
   head: () => ({
     meta: [
-      { title: "Custom Design — Mood Clothings" },
+      { title: "Custom Design — Mood Clothingsc:\Users\Adebayo\Downloads\admin.tsx" },
       { name: "description", content: "Upload your own design and let the Mood Clothings atelier bring it to life." },
     ],
   }),

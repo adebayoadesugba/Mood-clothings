@@ -45,28 +45,42 @@ export function CartDrawer() {
                 const p = findProduct(item.id);
                 if (!p) return null;
                 return (
-                  <li key={item.id + (item.color ?? "")} className="flex gap-4 p-5">
+                  <li key={item.id + (item.color ?? "") + ((item as any).size ?? "")} className="flex gap-4 p-5">
                     <img src={p.images[0]} alt={p.name} className="h-24 w-20 object-cover" />
                     <div className="flex min-w-0 flex-1 flex-col">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <div className="truncate text-xs uppercase tracking-widest">{p.name}</div>
-                          {item.color && (
-                            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                              <span className="h-3 w-3 rounded-full border border-hairline" style={{ backgroundColor: item.color }} />
-                              Color
-                            </div>
-                          )}
+                          
+                          {/* META PROPERTIES BLOCK - COLOR AND SIZE */}
+                          <div className="mt-1 flex items-center flex-wrap gap-2 text-[11px] text-muted-foreground">
+                            {item.color && (
+                              <div className="flex items-center gap-1">
+                                <span className="h-2.5 w-2.5 rounded-full border border-hairline" style={{ backgroundColor: item.color }} />
+                                <span>Color</span>
+                              </div>
+                            )}
+                            
+                            {/* NEW: Size metadata chip label container block rendered cleanly inline */}
+                           {/* NEW: Size layout updated with custom string concatenation */}
+                            {(item as any).size && (
+                              <div className="flex items-center gap-1 before:content-['·'] before:text-muted-foreground/60">
+                                <span className="text-[10px] tracking-wider uppercase bg-secondary px-1.5 py-0.5 font-medium text-foreground">
+                                  Size: {(item as any).size}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                          <div className="shrink-0 text-sm tabular-nums">${p.price * item.qty}</div>
+                        <div className="shrink-0 text-sm tabular-nums">${p.price * item.qty}</div>
                       </div>
                       <div className="mt-auto flex items-center justify-between">
                         <div className="flex items-center border border-hairline">
-                          <button className="grid h-8 w-8 place-items-center" onClick={() => setQty(item.id, item.qty - 1)} aria-label="Decrease"><Minus className="h-3 w-3" /></button>
+                          <button type="button" className="grid h-8 w-8 place-items-center" onClick={() => setQty(item.id, item.qty - 1)} aria-label="Decrease"><Minus className="h-3 w-3" /></button>
                           <span className="w-8 text-center text-xs tabular-nums">{item.qty}</span>
-                          <button className="grid h-8 w-8 place-items-center" onClick={() => setQty(item.id, item.qty + 1)} aria-label="Increase"><Plus className="h-3 w-3" /></button>
+                          <button type="button" className="grid h-8 w-8 place-items-center" onClick={() => setQty(item.id, item.qty + 1)} aria-label="Increase"><Plus className="h-3 w-3" /></button>
                         </div>
-                        <button onClick={() => removeFromCart(item.id)} aria-label="Remove" className="text-muted-foreground hover:text-foreground">
+                        <button type="button" onClick={() => removeFromCart(item.id)} aria-label="Remove" className="text-muted-foreground hover:text-foreground">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>

@@ -58,7 +58,7 @@ export function Header() {
             </nav>
           </div>
           <Link to="/" className="justify-self-center font-display text-2xl tracking-[0.2em] md:text-3xl">
-            <img src="images/MOOD CLOTH.png" alt="Mood Clothing" className="h-10 w-30 md:h-10" />
+            <img src="/images/MOOD CLOTH.png" alt="Mood Clothing" className="h-10 w-30 md:h-10" />
           </Link>
           <div className="flex items-center gap-1">
             <button aria-label="Search" onClick={openSearch} className="grid h-9 w-5 place-items-center hover:bg-secondary">

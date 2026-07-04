@@ -67,25 +67,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [state.cart, state.wishlist, state.recent, state.user]);
 
   // FIXED: Keeps cartOpen completely untouched so drawer stays shut, then fires toast popup
-  const addToCart = useCallback((id: string, color?: string, qty = 1) => {
-    const product = findProduct(id);
-    const productName = product ? product.name : "Item";
+// FIXED: Now tracking size explicitly inside the global cart state array
+const addToCart = useCallback((id: string, color?: string, qty = 1, size = "M") => {
+  const product = findProduct(id);
+  const productName = product ? product.name : "Item";
 
-    setState((s) => {
-      const existing = s.cart.find((c) => c.id === id && c.color === color);
-      const cart = existing
-        ? s.cart.map((c) => (c === existing ? { ...c, qty: c.qty + qty } : c))
-        : [...s.cart, { id, qty, color }];
-      
-      // Removed cartOpen: true so it doesn't pop open automatically
-      return { ...s, cart };
-    });
+  setState((s) => {
+    // Check match including size
+    const existing = s.cart.find((c) => c.id === id && c.color === color && (c as any).size === size);
+    
+    const cart = existing
+      ? s.cart.map((c) => (c === existing ? { ...c, qty: c.qty + qty } : c))
+      : [...s.cart, { id, qty, color, size }];
+    
+    return { ...s, cart };
+  });
 
-    // Displays the minimalist item update toast alert for exactly 3 seconds
-    toast.success(`${productName} has been added to cart`, {
-      duration: 3000,
-    });
-  }, []);
+  toast.success(`${productName} (Size: ${size}) has been added to cart`, {
+    duration: 3000,
+  });
+}, []);
 
   const removeFromCart = useCallback((id: string) => {
     setState((s) => ({ ...s, cart: s.cart.filter((c) => c.id !== id) }));
