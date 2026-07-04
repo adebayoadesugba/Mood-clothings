@@ -76,7 +76,7 @@ export function LoginModal() {
                 if (isSignUp) {
                   if (!form.name || !form.email || !form.phone || !form.password) return;
                   setUser({ name: form.name, email: form.email, phone: form.phone });
-                  toast.success("Welcome to Glamora — check your inbox for our welcome note.");
+                  toast.success("Welcome to Mood Clothings — check your inbox for our welcome note.");
                 } else {
                   if (!form.email || !form.password) return;
                   setUser({ name: form.name || "Valued Guest", email: form.email, phone: form.phone || "" });
@@ -84,7 +84,7 @@ export function LoginModal() {
                 }
               }}
             >
-              <h2 className="font-display text-3xl">{isSignUp ? "Join Glamora" : "Welcome Back"}</h2>
+              <h2 className="font-display text-3xl">{isSignUp ? "Join Mood Clothings" : "Welcome Back"}</h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 {isSignUp 
                   ? "Create your account to save wishlists and track orders." 
