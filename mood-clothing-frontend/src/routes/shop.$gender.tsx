@@ -1,8 +1,10 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, Outlet, useLocation } from "@tanstack/react-router";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductCard } from "@/components/ProductCard";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
-import { byCategory, CATEGORIES, SUBCATEGORIES, type Category } from "@/lib/products";
+import { PRODUCTS as STATIC_PRODUCTS, CATEGORIES, SUBCATEGORIES, type Category } from "@/lib/products";
+import { useStore } from "@/lib/store";
+import { useMemo } from "react";
 
 export const Route = createFileRoute("/shop/$gender")({
   head: ({ params }) => ({
@@ -24,21 +26,40 @@ function cap(s: string) { return s.charAt(0).toUpperCase() + s.slice(1); }
 function ShopGender() {
   const { gender } = Route.useParams();
   const cat = gender as Category;
-  const products = byCategory(cat);
+  const location = useLocation();
+  
+  // Grab live database products right from global context
+  const { PRODUCTS: liveRegistry } = useStore();
+
+  // Combine and filter dynamically by gender category case-insensitively
+  const products = useMemo(() => {
+    const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
+    return allInventory.filter((p) => p.category?.toLowerCase() === cat?.toLowerCase());
+  }, [cat, liveRegistry]);
+
+  // FIXED: Check if the user is looking at a child subcategory view (like /shop/men/jeans)
+  const isSubcategoryRoute = location.pathname.split("/").length > 3;
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-8">
       <Breadcrumbs items={[{ label: "Home", to: "/" }, { label: cap(gender) }]} />
-      <div className="mt-6 flex items-end justify-between">
-        <h1 className="font-display text-4xl md:text-5xl">{cap(gender)}</h1>
-        <span className="text-xs uppercase tracking-widest text-muted-foreground">{products.length} items</span>
-      </div>
+      
+      {/* FIXED: Only display parent header details if we are sitting directly on the parent "All" view */}
+      {!isSubcategoryRoute ? (
+        <div className="mt-6 flex items-end justify-between">
+          <h1 className="font-display text-4xl md:text-5xl">{cap(gender)}</h1>
+          <span className="text-xs uppercase tracking-widest text-muted-foreground">{products.length} items</span>
+        </div>
+      ) : null}
+
       <div className="mt-6 flex flex-wrap gap-2">
         <Link
           to="/shop/$gender"
           params={{ gender }}
-          aria-current="page"
-          className="border border-foreground bg-foreground px-4 py-2 text-[11px] uppercase tracking-widest text-background"
+          activeOptions={{ exact: true }}
+          activeProps={{ className: "border-foreground bg-foreground text-background" }}
+          inactiveProps={{ className: "border-hairline hover:border-foreground text-foreground bg-transparent" }}
+          className="border px-4 py-2 text-[11px] uppercase tracking-widest transition-colors"
         >
           All
         </Link>
@@ -46,17 +67,28 @@ function ShopGender() {
           <Link
             key={s.slug}
             to="/shop/$gender/$sub"
-            params={{ gender, sub: s.slug }}
-            className="border border-hairline px-4 py-2 text-[11px] uppercase tracking-widest transition-colors hover:border-foreground"
+            from="/shop/$gender"
+            params={{ sub: s.slug }}
+            activeProps={{ className: "border-foreground bg-foreground text-background font-medium" }}
+            inactiveProps={{ className: "border-hairline hover:border-foreground text-foreground bg-transparent" }}
+            className="border px-4 py-2 text-[11px] uppercase tracking-widest transition-colors"
           >
             {s.label}
           </Link>
         ))}
       </div>
-      <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
-        {products.map((p) => <ProductCard key={p.id} product={p} />)}
-        {products.length === 0 && <p className="col-span-full text-sm text-muted-foreground">No products in this collection yet.</p>}
-      </div>
+
+      {/* FIXED: If a subcategory pill is active, render the Outlet shell to execute your subcategory filter page. */}
+      {isSubcategoryRoute ? (
+        <Outlet />
+      ) : (
+        /* Render the default parent catalog grid view only when sitting exactly on the "All" path */
+        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
+          {products.map((p) => <ProductCard key={p.id} product={p} />)}
+          {products.length === 0 && <p className="col-span-full text-sm text-muted-foreground">No products in this collection yet.</p>}
+        </div>
+      )}
+
       <RecentlyViewed />
     </div>
   );

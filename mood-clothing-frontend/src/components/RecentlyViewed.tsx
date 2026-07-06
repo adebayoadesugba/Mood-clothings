@@ -1,16 +1,23 @@
 import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { findProduct } from "@/lib/products";
+import { PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
 import { ProductCard } from "./ProductCard";
 
 export function RecentlyViewed({ excludeId }: { excludeId?: string }) {
-  const { recent } = useStore();
+  // FIXED: Destructured PRODUCTS from global state context to track live registry items cleanly
+  const { recent, PRODUCTS: liveRegistry } = useStore();
   const carouselRef = useRef<HTMLDivElement>(null);
 
+  // UNIFIED ITEM LOOKUP: Combines backend database documents and static products before filtering
   const items = recent
     .filter((id) => id !== excludeId)
-    .map(findProduct)
+    .map((id) => {
+      const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
+      return allInventory.find(
+        (p) => p.id === id || p._id === id || p.databaseId === id
+      );
+    })
     .filter((p): p is NonNullable<typeof p> => !!p)
     .slice(0, 8);
 

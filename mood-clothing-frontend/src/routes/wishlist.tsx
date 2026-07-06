@@ -1,17 +1,31 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductCard } from "@/components/ProductCard";
-import { findProduct } from "@/lib/products";
+import { PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
 import { useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/wishlist")({
-  head: () => ({ meta: [{ title: "Wishlist — Glamora" }, { name: "description", content: "Your saved Glamora pieces." }] }),
+  head: () => ({ meta: [{ title: "Wishlist — Mood Clothings" }, { name: "description", content: "Your saved Mood Clothings pieces." }] }),
   component: WishlistPage,
 });
 
 function WishlistPage() {
-  const { wishlist, user, openLogin } = useStore();
-  const items = wishlist.map(findProduct).filter((p): p is NonNullable<typeof p> => !!p);
+  // Grab your live global PRODUCTS database items context directly alongside your actions
+  const { wishlist, user, openLogin, PRODUCTS: liveRegistry } = useStore();
+
+  // Sort from latest added to oldest added, map, and filter out duplicates
+  const items = [...wishlist]
+    .reverse()
+    .map((id) => {
+      const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
+      return allInventory.find(
+        (p) => p.id === id || p._id === id || p.databaseId === id
+      );
+    })
+    .filter((p): p is NonNullable<typeof p> => !!p)
+    .filter((product, index, self) => 
+      index === self.findIndex((p) => p.id === product.id)
+    );
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-8">
@@ -42,7 +56,7 @@ function WishlistPage() {
       ) : (
         /* Authenticated Wishlist Grid View */
         <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
-          {items.map((p) => <ProductCard key={p.id} product={p} />)}
+          {items.map((p, idx) => <ProductCard key={`${p.id}-${idx}`} product={p} />)}
         </div>
       )}
     </div>

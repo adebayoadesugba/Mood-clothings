@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useStore } from "@/lib/store";
-import { PRODUCTS } from "@/lib/products";
+import { PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
 
 export function SearchOverlay() {
-  const { searchOpen, closeSearch } = useStore();
+  // FIXED: Destructured PRODUCTS directly out of the dynamic global store context alongside your actions
+  const { searchOpen, closeSearch, PRODUCTS: liveRegistry } = useStore();
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -26,13 +27,17 @@ export function SearchOverlay() {
 
   const results = useMemo(() => {
     if (!debounced) return [];
-    return PRODUCTS.filter(
+    
+    // COMBINED INVENTORY PIPELINE: Merges backend live products and static fallback entries safely
+    const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
+
+    return allInventory.filter(
       (p) =>
-        p.name.toLowerCase().includes(debounced) ||
-        p.sub.includes(debounced) ||
-        p.category.includes(debounced),
+        p.name?.toLowerCase().includes(debounced) ||
+        p.sub?.toLowerCase().includes(debounced) ||
+        p.category?.toLowerCase().includes(debounced),
     ).slice(0, 8);
-  }, [debounced]);
+  }, [debounced, liveRegistry]);
 
   if (!searchOpen) return null;
 

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { findProduct } from "@/lib/products";
+import { PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
 import { useStore } from "@/lib/store";
 import { CheckCircle } from "lucide-react";
 
@@ -12,7 +12,7 @@ export const Route = createFileRoute("/checkout")({
 
 function Checkout() {
   const store = useStore();
-  const { cart, cartTotal, user, openLogin, clearCart, closeCart } = store;
+  const { cart, cartTotal, user, openLogin, clearCart, closeCart, PRODUCTS: liveRegistry } = store;
   
   const [isOrdered, setIsOrdered] = useState(false);
   const [showContinueButton, setShowContinueButton] = useState(false);
@@ -174,7 +174,11 @@ function Checkout() {
             <h3 className="text-xs uppercase tracking-widest">Order Summary</h3>
             <ul className="mt-4 divide-y divide-[color:var(--hairline)]">
               {cart.map((item) => {
-                const p = findProduct(item.id);
+                // FIXED UNIFIED LOOKUP ENGINE: Scans both client data models and dynamic liveRegistry documents
+                const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
+                const p = allInventory.find(
+                  (product) => product.id === item.id || product._id === item.id || product.databaseId === item.id
+                );
                 if (!p) return null;
                 return (
                   <li key={item.id + (item.color ?? "")} className="flex gap-3 py-3">

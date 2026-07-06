@@ -4,12 +4,27 @@ import { useEffect, useState } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductCard } from "@/components/ProductCard";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
-import { findProduct, related } from "@/lib/products";
+import { PRODUCTS as STATIC_PRODUCTS, related } from "@/lib/products";
+import { convertToSlug } from "@/lib/utils";
 import { useStore } from "@/lib/store";
+
+// Helper function to resolve dynamic products matching a name slug across combined arrays
+const findProductBySlug = (idParam: string, registryProducts: any[] = []) => {
+  const allAvailable = [...registryProducts, ...STATIC_PRODUCTS];
+  const match = allAvailable.find((p) => p.id === idParam || p._id === idParam || p.databaseId === idParam || convertToSlug(p.name) === idParam);
+  
+  // FIXED: If we are inside the pre-boot loader loop and can't find a static item,
+  // return a mock signature instead of throwing 404 so the context has time to populate on mount.
+  if (!match && registryProducts.length === 0 && idParam) {
+    return { name: "Loading Garment...", description: "", images: [""], colors: ["#000000"], category: "collection", sub: "all", price: 0 };
+  }
+  return match;
+};
 
 export const Route = createFileRoute("/product/$id")({
   head: ({ params }) => {
-    const p = findProduct(params.id);
+    // Basic head lookup using static fallbacks if the store context has not initialized yet
+    const p = findProductBySlug(params.id);
     return {
       meta: p
         ? [
@@ -24,7 +39,7 @@ export const Route = createFileRoute("/product/$id")({
     };
   },
   loader: ({ params }) => {
-    const p = findProduct(params.id);
+    const p = findProductBySlug(params.id);
     if (!p) throw notFound();
     return {};
   },
@@ -39,21 +54,43 @@ const INITIAL_MOCK_REVIEWS = [
 
 function ProductPage() {
   const { id } = Route.useParams();
-  const product = findProduct(id)!;
-  const { addToCart, toggleWishlist, wishlist, trackView, user } = useStore();
+  const { addToCart, toggleWishlist, wishlist, trackView, user, PRODUCTS: liveRegistry } = useStore();
   
+  // Resolve product using the live context registry dynamically
+  const product = findProductBySlug(id, liveRegistry);
+
   const [productReviewsMap, setProductReviewsMap] = useState<Record<string, typeof INITIAL_MOCK_REVIEWS>>({});
   const [activeImage, setActiveImage] = useState(0);
-  const [color, setColor] = useState(product.colors[0]);
-  const [size, setSize] = useState("M"); // Added state engine to monitor client sizes cleanly
+  const [color, setColor] = useState(product ? product.colors[0] : "");
+  const [size, setSize] = useState("M"); 
   const [qty, setQty] = useState(1);
-  const wished = wishlist.includes(product.id);
 
+  // Fallback state synchronization once the product payload safely mounts
+  useEffect(() => {
+    if (product && product.colors && product.colors.length > 0) {
+      setColor(product.colors[0]);
+    }
+  }, [product]);
+
+  useEffect(() => { 
+    if (product && product.id) {
+      trackView(product.id); 
+    }
+  }, [product, trackView]);
+
+  // FIXED: Keeps render blank or returns a loading container skeleton if data fetch is active
+  if (!product || product.name === "Loading Garment...") {
+    return (
+      <div className="mx-auto max-w-[1440px] px-4 py-16 text-center text-xs uppercase tracking-widest text-muted-foreground animate-pulse">
+        Syncing collection data...
+      </div>
+    );
+  }
+
+  const wished = wishlist.includes(product.id);
   const [newRating, setNewRating] = useState(5);
   const [newText, setNewText] = useState("");
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
-
-  useEffect(() => { trackView(product.id); }, [product.id, trackView]);
 
   const currentReviews = productReviewsMap[product.id] || INITIAL_MOCK_REVIEWS;
   const totalReviewsCount = currentReviews.length;
@@ -82,9 +119,8 @@ function ProductPage() {
     setNewRating(5);
   };
 
-  // Safe window opener builder for WhatsApp messaging link redirection logic
   const handleWhatsAppRedirect = () => {
-    const phoneNumber = "2348000000000"; // Replace with your company phone sequence number
+    const phoneNumber = "2348000000000"; 
     const message = encodeURIComponent(`Hi Mood Clothings, I am interested in purchasing the "${product.name}" (Color: ${color}, Size: ${size}). Could you assist me with more details?`);
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank", "noopener,noreferrer");
   };
@@ -94,8 +130,8 @@ function ProductPage() {
       <Breadcrumbs
         items={[
           { label: "Home", to: "/" },
-          { label: product.category[0].toUpperCase() + product.category.slice(1), to: "/shop/$gender", params: { gender: product.category } },
-          { label: product.sub[0].toUpperCase() + product.sub.slice(1), to: "/shop/$gender/$sub", params: { gender: product.category, sub: product.sub } },
+          { label: product.category ? product.category[0].toUpperCase() + product.category.slice(1) : "Collection", to: "/shop/$gender", params: { gender: product.category || "women" } },
+          { label: product.sub ? product.sub[0].toUpperCase() + product.sub.slice(1) : "All", to: "/shop/$gender/$sub", params: { gender: product.category || "women", sub: product.sub || "all" } },
           { label: product.name },
         ]}
       />

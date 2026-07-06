@@ -32,6 +32,16 @@ export type Product = {
   badge?: "New" | "Best Seller" | "Out of Stock";
 };
 
+// Clean inline utility to handle fallback string normalization for name lookups
+const convertToSlug = (text: string): string => {
+  return text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') 
+    .replace(/[\s_-]+/g, '-') 
+    .replace(/^-+|-+$/g, '');
+};
+
 // Unsplash fashion photos, resized. Stable IDs.
 const img = (id: string) => `https://images.unsplash.com/${id}?w=900&h=1125&fit=crop&auto=format&q=75`;
 
@@ -57,7 +67,15 @@ export const PRODUCTS: Product[] = [
 ];
 
 export function findProduct(id: string): Product | undefined {
-  return PRODUCTS.find((p) => p.id === id);
+  if (!id) return undefined;
+  const cleanId = id.toString();
+  
+  // Try structural text matching rules first
+  const match = PRODUCTS.find((p) => p.id === cleanId);
+  if (match) return match;
+  
+  // Fall back to check text slug mutations
+  return PRODUCTS.find((p) => convertToSlug(p.name) === cleanId.toLowerCase());
 }
 
 export function byCategory(cat: Category): Product[] {
@@ -69,5 +87,6 @@ export function bySub(cat: Category, sub: SubCategory): Product[] {
 }
 
 export function related(p: Product, n = 4): Product[] {
+  if (!p) return [];
   return PRODUCTS.filter((x) => x.id !== p.id && (x.sub === p.sub || x.category === p.category)).slice(0, n);
 }

@@ -4,7 +4,7 @@ import { useMemo, useState, useRef } from "react";
 import { ProductCard } from "@/components/ProductCard";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import { PRODUCTS as STATIC_PRODUCTS, CATEGORIES, SUBCATEGORIES, type Product } from "@/lib/products";
-import { useStore } from "@/lib/store"; // Fixed: Added missing import
+import { useStore } from "@/lib/store"; 
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -16,16 +16,29 @@ function Home() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
   const carouselRef = useRef<HTMLDivElement>(null);
   
-  // Grab global tracking state
-  const { cart, recent, PRODUCTS = STATIC_PRODUCTS } = useStore(); 
+  // Grab global synchronized tracking arrays straight from your initialized store context
+  const { cart, recent, PRODUCTS: liveProducts } = useStore(); 
 
+  // Combine Mock Items and Database Items dynamically into one uniform array
+  const combinedProducts = useMemo(() => {
+    return [...(liveProducts || []), ...STATIC_PRODUCTS];
+  }, [liveProducts]);
+
+  // Unified Filter logic handles both static and database products seamlessly
   const featured = useMemo(() => {
-    let list = PRODUCTS;
-    if (filter === "New Arrival") list = list.filter((p: Product) => p.badge === "New");
-    else if (filter === "Best Seller") list = list.filter((p: Product) => p.badge === "Best Seller");
-    else if (filter === "Recommendation") list = list.filter((p: Product) => p.rating >= 4.7);
-    return list.slice(0, 6);
-  }, [filter, PRODUCTS]);
+    let list = combinedProducts;
+    
+    if (filter === "New Arrival") {
+      list = list.filter((p: Product) => p.badge === "New" || p.badge === "New Arrival");
+    } else if (filter === "Best Seller") {
+      list = list.filter((p: Product) => p.badge === "Best Seller");
+    } else if (filter === "Recommendation") {
+      list = list.filter((p: Product) => p.rating >= 4.7);
+    }
+    
+    // ENFORCES THE MAXIMUM LIMIT OF 12 ITEMS ONLY
+    return list.slice(0, 12);
+  }, [filter, combinedProducts]);
 
   const scroll = (direction: "left" | "right") => {
     if (carouselRef.current) {
@@ -37,10 +50,9 @@ function Home() {
     }
   };
 
-  // Fixed: Added strong typing for parameters to resolve implicitly 'any' compilation errors
   const lookProducts = useMemo(() => {
     const selectedIds = ["silhouette-puffer", "crystal-midi", "alia-boots"];
-    const filtered = PRODUCTS.filter((p: Product) => selectedIds.includes(p.id));
+    const filtered = combinedProducts.filter((p: Product) => selectedIds.includes(p.id));
     
     return filtered.sort((a: Product, b: Product) => {
       const scoreA = (cart.filter((item: { id: string }) => item.id === a.id).length * 3) + (recent.includes(a.id) ? 1 : 0);
@@ -52,9 +64,9 @@ function Home() {
       
       return scoreB - scoreA;
     });
-  }, [cart, recent, PRODUCTS]);
+  }, [cart, recent, combinedProducts]);
 
-  const topProductInLook = lookProducts[0] || PRODUCTS[0];
+  const topProductInLook = lookProducts[0] || combinedProducts[0];
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 md:px-8">
@@ -113,9 +125,12 @@ function Home() {
             ))}
           </div>
         </div>
+        
+        {/* Dynamic unified grid layout handles sorting and layouts cleanly */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
           {featured.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
+
         <div className="mt-10 text-center">
           <Link to="/new-arrivals" params={{ gender: "women" }} className="inline-flex items-center gap-2 border border-hairline px-6 py-3 text-[11px] uppercase tracking-widest hover:border-foreground">
             See More Products <ArrowUpRight className="h-3 w-3" />
@@ -188,7 +203,7 @@ function Home() {
             >
               <div className="overflow-hidden aspect-[3/4]">
                 <img
-                  src={STATIC_PRODUCTS.find((p) => p.sub === s.slug)?.images[0] ?? STATIC_PRODUCTS[0].images[0]}
+                  src={combinedProducts.find((p) => p.sub === s.slug)?.images[0] ?? combinedProducts[0]?.images[0]}
                   alt={s.label}
                   loading="lazy"
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 will-change-transform"
@@ -206,10 +221,10 @@ function Home() {
           
           {/* DYNAMIC BIG IMAGE */}
           <div className="overflow-hidden rounded-md bg-secondary relative group">
-            <Link to="/product/$id" params={{ id: topProductInLook.id }}>
+            <Link to="/product/$id" params={{ id: topProductInLook?.id }}>
               <img
-                src={topProductInLook.images[0]}
-                alt={`Featured look: ${topProductInLook.name}`}
+                src={topProductInLook?.images[0]}
+                alt={`Featured look: ${topProductInLook?.name}`}
                 loading="lazy"
                 className="h-full max-h-[720px] w-full object-cover transition-transform duration-700 group-hover:scale-105 will-change-transform"
               />

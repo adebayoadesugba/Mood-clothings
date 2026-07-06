@@ -3,7 +3,8 @@ import { useMemo, useState } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductCard } from "@/components/ProductCard";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
-import { PRODUCTS, CATEGORIES, SUBCATEGORIES, type Category, type SubCategory } from "@/lib/products";
+import { PRODUCTS as STATIC_PRODUCTS, CATEGORIES, SUBCATEGORIES, type Category, type SubCategory } from "@/lib/products";
+import { useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/collection")({
   head: () => ({
@@ -53,15 +54,41 @@ function CollectionPage() {
   const [sub, setSub] = useState<Sub>("all");
   const [tag, setTag] = useState<Tag>("all");
 
-  const items = useMemo(() => {
-    let list = shuffle(PRODUCTS);
-    if (cat !== "all") list = list.filter((p) => p.category === cat);
-    if (sub !== "all") list = list.filter((p) => p.sub === sub);
-    if (tag === "new") list = list.filter((p) => p.badge === "New");
-    else if (tag === "best") list = list.filter((p) => p.badge === "Best Seller");
-    else if (tag === "recommended") list = list.filter((p) => p.rating >= 4.7);
+  // Grab live database products right from global context
+  const { PRODUCTS: liveRegistry } = useStore();
+
+const items = useMemo(() => {
+    // COMBINED INVENTORY PIPELINE: Merges backend live products and static fallback entries safely
+    const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
+    let list = shuffle(allInventory);
+    
+    // Normalize string comparisons to prevent case mismatches from backend inputs
+    if (cat !== "all") {
+      list = list.filter((p) => p.category?.toLowerCase() === cat.toLowerCase());
+    }
+    
+    if (sub !== "all") {
+      list = list.filter((p) => {
+        const productSub = p.sub?.toLowerCase() || "";
+        const filterSub = sub.toLowerCase();
+        
+        // This handles cases where backend strings are singular/plural matches (e.g., "jean" vs "jeans")
+        return productSub === filterSub || 
+               productSub.startsWith(filterSub) || 
+               filterSub.startsWith(productSub);
+      });
+    }
+    
+    if (tag === "new") {
+      list = list.filter((p) => p.badge?.toLowerCase() === "new");
+    } else if (tag === "best") {
+      list = list.filter((p) => p.badge?.toLowerCase().includes("best"));
+    } else if (tag === "recommended") {
+      list = list.filter((p) => p.rating >= 4.7);
+    }
+    
     return list;
-  }, [cat, sub, tag]);
+  }, [cat, sub, tag, liveRegistry]);
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-8">
@@ -71,7 +98,7 @@ function CollectionPage() {
         <div>
           <h1 className="font-display text-4xl md:text-6xl">The Collection</h1>
           <p className="mt-3 max-w-xl text-sm text-muted-foreground">
-            Every Glamora piece in one place — new arrivals, best sellers, and everyday classics across every category.
+            Every Mood Clothings piece in one place — new arrivals, best sellers, and everyday classics across every category.
           </p>
         </div>
         <span className="text-xs uppercase tracking-widest text-muted-foreground">{items.length} items</span>

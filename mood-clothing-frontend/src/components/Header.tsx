@@ -9,6 +9,12 @@ import Logo from "../../public/images/logo.svg";
 export function Header() {
   const { openSearch, openCart, openLogin, cartCount, user, wishlist } = useStore();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Sync mounting flag on component load to ensure perfect SSR/Client layout balancing
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
@@ -70,12 +76,12 @@ export function Header() {
                 className="hidden md:grid relative h-9 w-9 place-items-center hover:bg-secondary"
               >
                 <Heart className="h-4 w-4" />
-                {wishlist.length > 0 && (
+                {mounted && wishlist.length > 0 && (
                   <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-foreground px-1 text-[10px] text-background tabular-nums">
                     {wishlist.length}
                   </span>
                 )}
-        </Link>
+            </Link>
             <button aria-label={user ? user.name : "Account"} onClick={openLogin} className="grid h-9 w-5 place-items-center hover:bg-secondary">
               <User className="h-4 w-4" />
             </button>
@@ -143,7 +149,6 @@ export function Header() {
             <Link to="/custom-design" onClick={() => setMobileOpen(false)} className="block py-3 text-sm uppercase tracking-widest hairline-b">Custom Design</Link>
             <Link to="/wishlist" onClick={() => setMobileOpen(false)} className="block py-3 text-sm uppercase tracking-widest hairline-b">Wishlist</Link>
             
-            {/* MOBILE ONLY LINK ADDITIONS */}
             <Link to="/about" onClick={() => setMobileOpen(false)} className="block py-3 text-sm uppercase tracking-widest hairline-b text-muted-foreground hover:text-foreground transition-colors">
               About
             </Link>

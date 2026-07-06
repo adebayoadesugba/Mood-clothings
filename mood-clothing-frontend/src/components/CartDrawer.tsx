@@ -2,19 +2,18 @@ import { Link } from "@tanstack/react-router";
 import { X, Minus, Plus, Trash2 } from "lucide-react";
 import { useEffect } from "react";
 import { useStore } from "@/lib/store";
-import { findProduct } from "@/lib/products";
+import { PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
 import { cn } from "@/lib/utils";
 
 export function CartDrawer() {
-  const { cartOpen, closeCart, cart, cartTotal, setQty, removeFromCart } = useStore();
+  // Destructure your synchronized PRODUCTS (the live backend items) right out of useStore
+  const { cartOpen, closeCart, cart, cartTotal, setQty, removeFromCart, PRODUCTS: liveRegistry } = useStore();
 
   useEffect(() => {
     document.body.style.overflow = cartOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [cartOpen]);
 
-  // SAFEGUARD: If someone manually cleared local caches during checkout checkout,
-  // ensure this drawer layout handles the empty state seamlessly.
   const displayCart = cart || [];
 
   return (
@@ -34,6 +33,7 @@ export function CartDrawer() {
           <h3 className="text-sm uppercase tracking-widest">My Cart ({displayCart.length})</h3>
           <button onClick={closeCart} aria-label="Close cart"><X className="h-5 w-5" /></button>
         </div>
+        
         <div className="flex-1 overflow-y-auto">
           {displayCart.length === 0 ? (
             <div className="grid h-full place-items-center p-8 text-center text-sm text-muted-foreground">
@@ -41,18 +41,25 @@ export function CartDrawer() {
             </div>
           ) : (
             <ul className="divide-y divide-[color:var(--hairline)]">
-              {displayCart.map((item) => {
-                const p = findProduct(item.id);
+              {/* REVERSED ARRAY PIPELINE: Orders selections cleanly from newest to oldest added */}
+              {[...displayCart].reverse().map((item, idx) => {
+                // UNIFIED LOOKUP ENGINE: Checks both backend registry items and your static mock data
+                const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
+                const p = allInventory.find(
+                  (product) => product.id === item.id || product._id === item.id || product.databaseId === item.id
+                );
+                
+                // If it still can't find it anywhere, skip rendering to prevent crashing
                 if (!p) return null;
+                
                 return (
-                  <li key={item.id + (item.color ?? "") + ((item as any).size ?? "")} className="flex gap-4 p-5">
-                    <img src={p.images[0]} alt={p.name} className="h-24 w-20 object-cover" />
+                  <li key={`${item.id}-${item.color ?? ""}-${(item as any).size ?? ""}-${idx}`} className="flex gap-4 p-5">
+                    <img src={p.images?.[0] || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518'} alt={p.name} className="h-24 w-20 object-cover bg-secondary" />
                     <div className="flex min-w-0 flex-1 flex-col">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-xs uppercase tracking-widest">{p.name}</div>
                           
-                          {/* META PROPERTIES BLOCK - COLOR AND SIZE */}
                           <div className="mt-1 flex items-center flex-wrap gap-2 text-[11px] text-muted-foreground">
                             {item.color && (
                               <div className="flex items-center gap-1">
@@ -61,8 +68,6 @@ export function CartDrawer() {
                               </div>
                             )}
                             
-                            {/* NEW: Size metadata chip label container block rendered cleanly inline */}
-                           {/* NEW: Size layout updated with custom string concatenation */}
                             {(item as any).size && (
                               <div className="flex items-center gap-1 before:content-['·'] before:text-muted-foreground/60">
                                 <span className="text-[10px] tracking-wider uppercase bg-secondary px-1.5 py-0.5 font-medium text-foreground">
@@ -74,6 +79,7 @@ export function CartDrawer() {
                         </div>
                         <div className="shrink-0 text-sm tabular-nums">${p.price * item.qty}</div>
                       </div>
+                      
                       <div className="mt-auto flex items-center justify-between">
                         <div className="flex items-center border border-hairline">
                           <button type="button" className="grid h-8 w-8 place-items-center" onClick={() => setQty(item.id, item.qty - 1)} aria-label="Decrease"><Minus className="h-3 w-3" /></button>
@@ -91,6 +97,7 @@ export function CartDrawer() {
             </ul>
           )}
         </div>
+        
         {displayCart.length > 0 && (
           <div className="border-t border-hairline p-5">
             <div className="mb-4 flex items-center justify-between text-sm">

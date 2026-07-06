@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpRight } from "lucide-react";
+import { useMemo } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductCard } from "@/components/ProductCard";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
-import { PRODUCTS } from "@/lib/products";
+import { PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
+import { useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/new-arrivals")({
   head: () => ({
@@ -34,19 +36,24 @@ export const Route = createFileRoute("/new-arrivals")({
 
 const MAX = 40;
 
-// Rank: pieces flagged "New" first, then everything else in catalog order.
-// Cap at 40 so older items are pushed out as new ones are added.
-function latest() {
-  const withRank = PRODUCTS.map((p, i) => ({
-    p,
-    rank: (p.badge === "New" ? 0 : 1) * 1000 + i,
-  }));
-  withRank.sort((a, b) => a.rank - b.rank);
-  return withRank.slice(0, MAX).map((x) => x.p);
-}
-
 function NewArrivalsPage() {
-  const items = latest();
+  // Grab live database products right from global context
+  const { PRODUCTS: liveRegistry } = useStore();
+
+  // Rank: pieces flagged "New" first, then everything else in catalog order.
+  // Cap at 40 so older items are pushed out as new ones are added.
+  const items = useMemo(() => {
+    const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
+    
+    const withRank = allInventory.map((p, i) => ({
+      p,
+      rank: (p.badge === "New" ? 0 : 1) * 1000 + i,
+    }));
+    
+    withRank.sort((a, b) => a.rank - b.rank);
+    return withRank.slice(0, MAX).map((x) => x.p);
+  }, [liveRegistry]);
+
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-8">
       <Breadcrumbs items={[{ label: "Home", to: "/" }, { label: "New Arrivals" }]} />
