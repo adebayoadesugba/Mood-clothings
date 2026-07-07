@@ -8,7 +8,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/custom-design")({
   head: () => ({
     meta: [
-      { title: "Custom Design — Mood Clothingsc:\Users\Adebayo\Downloads\admin.tsx" },
+      { title: "Custom Design — Mood Clothings:\Users\Adebayo\Downloads\admin.tsx" },
       { name: "description", content: "Upload your own design and let the Mood Clothings atelier bring it to life." },
     ],
   }),
@@ -49,7 +49,7 @@ function CustomDesign() {
   };
 
   return (
-    <div className="mx-auto max-w-[1100px] px-4 py-8 md:px-8">
+    <div className="mx-auto max-w-[1400px] px-4 py-8 md:px-8">
       <Breadcrumbs items={[{ label: "Home", to: "/" }, { label: "Custom Design" }]} />
       <div className="mt-8 max-w-2xl">
         <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">The Atelier</p>

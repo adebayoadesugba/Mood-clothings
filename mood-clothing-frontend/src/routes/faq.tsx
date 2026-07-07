@@ -27,10 +27,10 @@ const FAQS: { q: string; a: string }[] = [
 function FaqPage() {
   const [open, setOpen] = useState<number | null>(0);
   return (
-    <div className="mx-auto max-w-[900px] px-4 py-12 md:px-8 md:py-16">
+    <div className="mx-auto max-w-[1400px] px-4 py-12 md:px-8 md:py-16">
       <Breadcrumbs items={[{ label: "FAQ" }]} />
       <header className="mt-6">
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">Frequently Asked</p>
+        <p className="text-xl uppercase tracking-widest text-muted-foreground">Frequently Asked</p>
         <h1 className="mt-3 font-display text-5xl md:text-6xl">Questions & answers.</h1>
       </header>
 
@@ -44,11 +44,11 @@ function FaqPage() {
                 className="flex w-full items-center justify-between gap-6 py-5 text-left"
                 aria-expanded={isOpen}
               >
-                <span className="font-display text-lg md:text-xl">{f.q}</span>
+                <span className="font-display text-2xl md:text-2xl">{f.q}</span>
                 <span className="text-2xl leading-none text-muted-foreground">{isOpen ? "−" : "+"}</span>
               </button>
               {isOpen && (
-                <p className="pb-6 pr-8 text-sm text-muted-foreground">{f.a}</p>
+                <p className="pb-6 pr-8 text-lg text-muted-foreground">{f.a}</p>
               )}
             </div>
           );

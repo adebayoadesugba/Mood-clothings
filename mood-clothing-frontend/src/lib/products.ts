@@ -29,7 +29,7 @@ export type Product = {
   rating: number;
   reviewCount: number;
   description: string;
-  badge?: "New" | "Best Seller" | "Out of Stock";
+  badge?: "New" | "New Arrival" | "Best Seller" | "Out of Stock"; // FIXED: Expanded typing matrix boundaries cleanly
 };
 
 // Clean inline utility to handle fallback string normalization for name lookups

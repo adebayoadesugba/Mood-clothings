@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Package, ShoppingBag, Users, LogOut, Plus, Trash2, Pencil, ChevronDown, ChevronRight, X, Upload } from "lucide-react";
+import { Package, ShoppingBag, Users, LogOut, Plus, Trash2, Pencil, ChevronDown, ChevronRight, X, Upload, Palette, Download, Maximize2 } from "lucide-react";
 import { PRODUCTS, CATEGORIES, SUBCATEGORIES, type Product, type Category, type SubCategory } from "@/lib/products";
+import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
@@ -20,9 +21,9 @@ const DEMO_EMAIL = "admin@moon-clothings.com";
 const DEMO_PASS = "admin123";
 
 type AdminSession = { email: string } | null;
-type Tab = "products" | "orders" | "customers";
+type Tab = "products" | "orders" | "customers" | "designs";
 
-type AdminProduct = Product & { tags: string[]; stockSizes: string[]; sold: number };
+type AdminProduct = Product & { _id?: string; tags: string[]; stockSizes: string[]; sold: number };
 
 const TAG_OPTIONS = ["New Arrival", "Best Seller", "Out of Stock"];
 const SIZE_OPTIONS = ["S", "M", "L", "XL", "XXL"];
@@ -37,11 +38,21 @@ type Order = {
   createdAt: string;
 };
 
+type UserDesign = {
+  id: string;
+  name: string;
+  email: string;
+  note: string;
+  images: string[];
+  createdAt: string;
+};
+
 const STATUS_FLOW: Order["status"][] = ["Pending Paid", "Processing", "Shipped", "Delivered", "Cancelled"];
 
 function seedProducts(): AdminProduct[] {
   return PRODUCTS.map((p, i) => ({
     ...p,
+    _id: p.id,
     tags: [p.badge === "New" ? "New Arrival" : p.badge === "Best Seller" ? "Best Seller" : ""].filter(Boolean),
     stockSizes: ["S", "M", "L", "XL"],
     sold: 40 + ((i * 37) % 260),
@@ -70,12 +81,43 @@ function seedOrders(products: AdminProduct[]): Order[] {
   });
 }
 
+function seedUserDesigns(): UserDesign[] {
+  return [
+    {
+      id: "DSN-4001",
+      name: "Tunde Bakare",
+      email: "tunde@bakaredigital.com",
+      createdAt: "2026-07-04",
+      note: "I want this specific vintage wash denim block tailored with custom embroidery on the back panel. Please ensure the structural heavy canvas feels thick and matching industrial zippers are mounted along the seams.",
+      images: [
+        "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=500",
+        "https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=500"
+      ]
+    },
+    {
+      id: "DSN-4002",
+      name: "Chidi Collins",
+      email: "chidi.collins@creative.ng",
+      createdAt: "2026-07-02",
+      note: "Oversized silhouette tracksuit drop mock style. Attach the custom logo patch on the left chest plate. Let the inner fleece matching layer stay soft cream white.",
+      images: [
+        "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=500",
+        "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=500",
+        "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500"
+      ]
+    }
+  ];
+}
+
 function AdminPage() {
   const [session, setSession] = useState<AdminSession>(null);
   const [ready, setReady] = useState(false);
   const [tab, setTab] = useState<Tab>("products");
   const [products, setProducts] = useState<AdminProduct[]>(() => seedProducts());
   const [orders, setOrders] = useState<Order[]>(() => seedOrders(seedProducts()));
+  const [designs, setDesigns] = useState<UserDesign[]>(() => seedUserDesigns());
+
+  const { refreshInventory } = useStore();
 
   useEffect(() => {
     try {
@@ -85,14 +127,47 @@ function AdminPage() {
     setReady(true);
   }, []);
 
-  const login = (email: string, pass: string) => {
-    if (email.trim().toLowerCase() === DEMO_EMAIL && pass === DEMO_PASS) {
-      const s = { email: email.trim().toLowerCase() };
-      localStorage.setItem(ADMIN_KEY, JSON.stringify(s));
-      setSession(s);
-      toast.success("Signed in to admin");
-    } else {
-      toast.error("Invalid credentials");
+  const login = async (email: string, pass: string) => {
+    const AUTH_API_URL = "http://localhost:5000/api/auth/login";
+    
+    try {
+      const res = await fetch(AUTH_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password: pass })
+      });
+
+      const responseText = await res.text();
+      let data: any = {};
+
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        throw new Error("The authentication server route layout path could not be found (404). Check your backend server URL routing.");
+      }
+
+      if (!res.ok) {
+        throw new Error(data.message || "Invalid administrative credentials.");
+      }
+      
+      if (data.isAdmin === false) {
+        toast.error("Access denied: Account is not flagged as an Administrator.");
+        return;
+      }
+
+      const sessionData = { 
+        email: data.email, 
+        token: data.token 
+      };
+      
+      localStorage.setItem(ADMIN_KEY, JSON.stringify(sessionData));
+      setSession({ email: data.email });
+      toast.success("Authorized: Signed in securely to admin panel");
+      
+      window.location.reload(); 
+    } catch (err: any) {
+      console.error("Authentication handshake failure:", err);
+      toast.error(err.message || "Unable to reach auth server. Please check your backend connection status.");
     }
   };
   const logout = () => { localStorage.removeItem(ADMIN_KEY); setSession(null); };
@@ -101,18 +176,19 @@ function AdminPage() {
   if (!session) return <LoginScreen onLogin={login} />;
 
   return (
-    <div className="h-screen overflow-hidden bg-background text-foreground">
+    <div className="h-screen overflow-hidden bg-background text-foreground text-lg">
       <div className="flex h-full">
         <aside className="hidden h-full w-60 shrink-0 border-r border-hairline bg-background md:block relative">
           <div className="border-b border-hairline p-6">
             <Link to="/" className="font-display text-xl">Moon Clothings</Link>
-            <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">Admin Console</p>
+            <p className="mt-1 text-lg uppercase tracking-widest text-muted-foreground">Admin Console</p>
           </div>
           <nav className="p-3">
             {[
               { id: "products", label: "Products", icon: Package },
               { id: "orders", label: "Orders", icon: ShoppingBag },
               { id: "customers", label: "Customers", icon: Users },
+              { id: "designs", label: "User Designs", icon: Palette },
             ].map((it) => {
               const Icon = it.icon;
               const active = tab === it.id;
@@ -120,37 +196,39 @@ function AdminPage() {
                 <button
                   key={it.id}
                   onClick={() => setTab(it.id as Tab)}
-                  className={`flex w-full items-center gap-3 px-3 py-2.5 text-sm transition-colors ${active ? "bg-foreground text-background" : "hover:bg-secondary"}`}
+                  className={`flex w-full items-center gap-3 px-3 py-2.5 text-lg transition-colors ${active ? "bg-foreground text-background" : "hover:bg-secondary"}`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-5 w-5" />
                   {it.label}
                 </button>
               );
             })}
           </nav>
           <div className="absolute bottom-0 left-0 right-0 border-t border-hairline p-4 bg-background">
-            <p className="truncate text-xs text-muted-foreground">{session.email}</p>
+            <p className="truncate text-lg text-muted-foreground">{session.email}</p>
             <button onClick={logout} className="mt-2 flex items-center gap-2 text-xs uppercase tracking-widest hover:underline">
-              <LogOut className="h-3 w-3" /> Sign out
+              <LogOut className="h-4 w-4" /> Sign out
             </button>
           </div>
         </aside>
 
         <div className="flex-1 flex flex-col h-full overflow-hidden">
           <header className="flex items-center justify-between border-b border-hairline bg-background px-6 py-4 md:py-6">
-            <span className="font-display text-xl capitalize">{tab} Management</span>
-            <select value={tab} onChange={(e) => setTab(e.target.value as Tab)} className="border border-hairline bg-background px-2 py-1 text-sm md:hidden">
+            <span className="font-display text-xl capitalize">{tab === "designs" ? "User Designs" : `${tab} Management`}</span>
+            <select value={tab} onChange={(e) => setTab(e.target.value as Tab)} className="border border-hairline bg-background px-2 py-1 text-lg md:hidden">
               <option value="products">Products</option>
               <option value="orders">Orders</option>
               <option value="customers">Customers</option>
+              <option value="designs">User Designs</option>
             </select>
           </header>
           
-          <main className="flex-1 overflow-hidden p-6 md:p-10">
-            {tab === "products" && <ProductsModule products={products} setProducts={setProducts} />}
+          <div className="flex-1 overflow-y-auto p-6 md:p-10">
+            {tab === "products" && <ProductsModule products={products} setProducts={setProducts} refreshInventory={refreshInventory} />}
             {tab === "orders" && <OrdersModule orders={orders} setOrders={setOrders} />}
             {tab === "customers" && <CustomersModule orders={orders} />}
-          </main>
+            {tab === "designs" && <DesignsModule designs={designs} setDesigns={setDesigns} />}
+          </div>
         </div>
       </div>
     </div>
@@ -161,27 +239,27 @@ function LoginScreen({ onLogin }: { onLogin: (email: string, pass: string) => vo
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   return (
-    <div className="grid min-h-screen place-items-center bg-secondary p-4">
+    <div className="grid min-h-screen place-items-center bg-secondary p-4 text-lg">
       <form
         onSubmit={(e) => { e.preventDefault(); onLogin(email, pass); }}
         className="w-full max-w-sm border border-hairline bg-background p-8"
       >
         <h1 className="font-display text-3xl">Admin Sign In</h1>
-        <p className="mt-2 text-xs text-muted-foreground">Restricted area. Authorized personnel only.</p>
+        <p className="mt-2 text-lg text-muted-foreground">Restricted area. Authorized personnel only.</p>
         <div className="mt-6 space-y-4">
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Email</label>
+            <label className="text-lg uppercase tracking-widest text-muted-foreground">Email</label>
             <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full border-b border-hairline bg-transparent py-2 text-sm outline-none focus:border-foreground" />
+              className="mt-1 w-full border-b border-hairline bg-transparent py-2 text-lg outline-none focus:border-foreground" />
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Password</label>
+            <label className="text-lg uppercase tracking-widest text-muted-foreground">Password</label>
             <input required type="password" value={pass} onChange={(e) => setPass(e.target.value)}
-              className="mt-1 w-full border-b border-hairline bg-transparent py-2 text-sm outline-none focus:border-foreground" />
+              className="mt-1 w-full border-b border-hairline bg-transparent py-2 text-lg outline-none focus:border-foreground" />
           </div>
         </div>
-        <button className="mt-8 w-full bg-foreground py-3 text-xs uppercase tracking-widest text-background">Sign in</button>
-        <p className="mt-4 text-center text-[11px] text-muted-foreground">Secured🔒</p>
+        <button className="mt-8 w-full bg-foreground py-3 text-lg uppercase tracking-widest text-background">Sign in</button>
+        <p className="mt-4 text-center text-lg text-muted-foreground">Secured🔒</p>
       </form>
     </div>
   );
@@ -195,41 +273,173 @@ function emptyProduct(): AdminProduct {
   };
 }
 
-function ProductsModule({ products, setProducts }: { products: AdminProduct[]; setProducts: (p: AdminProduct[]) => void }) {
+function ProductsModule({ products, setProducts, refreshInventory }: { products: AdminProduct[]; setProducts: (p: AdminProduct[]) => void; refreshInventory: () => Promise<void> }) {
   const [editing, setEditing] = useState<AdminProduct | null>(null);
+  const API_BASE_URL = "http://localhost:5000/api/products"; 
 
-  const save = (p: AdminProduct) => {
-    if (!p.name || p.price <= 0) { toast.error("Name and price required"); return; }
-    if (p.images.length === 0) { toast.error("At least one product image is required"); return; }
-    const id = p.id || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    const next = { ...p, id };
-    const idx = products.findIndex((x) => x.id === id);
-    if (idx >= 0) {
-      const copy = [...products]; copy[idx] = next; setProducts(copy);
-      toast.success("Product updated");
-    } else {
-      setProducts([next, ...products]);
-      toast.success("Product created");
-    }
-    setEditing(null);
+  const getAuthHeaders = () => {
+    const sessionRaw = localStorage.getItem(ADMIN_KEY);
+    const token = sessionRaw ? JSON.parse(sessionRaw)?.token : "";
+    return {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token || ""}`
+    };
   };
-  const remove = (id: string) => { setProducts(products.filter((p) => p.id !== id)); toast.success("Product deleted"); };
+
+  useEffect(() => {
+    const fetchLiveProducts = async () => {
+      try {
+        const res = await fetch(API_BASE_URL, {
+          headers: { "Authorization": getAuthHeaders()["Authorization"] }
+        });
+        if (!res.ok) throw new Error("Network status validation error");
+        const rawJson = await res.json();
+        
+        const verifiedArray = Array.isArray(rawJson) 
+          ? rawJson 
+          : Array.isArray(rawJson.data) 
+            ? rawJson.data 
+            : Array.isArray(rawJson.data?.data) 
+              ? rawJson.data.data 
+              : [];
+              
+        const standardized = verifiedArray.map((item: any) => ({
+          ...item,
+          id: item.id || item._id, 
+          tags: Array.isArray(item.tags) && item.tags.length > 0 
+            ? [item.tags[0] === "New" ? "New Arrival" : item.tags[0]]
+            : [item.badge === "New" ? "New Arrival" : item.badge === "Best Seller" ? "Best Seller" : ""].filter(Boolean)
+        }));
+        setProducts(standardized);
+      } catch (err) {
+        console.error("Global store failed to sync backend inventory:", err);
+        toast.error("Could not sync live catalog data.");
+      }
+    };
+    fetchLiveProducts();
+  }, [setProducts]);
+
+  const save = async (p: AdminProduct) => {
+    if (!p.name?.trim()) { toast.error("Product Title is missing!"); return; }
+    if (!p.description?.trim()) { toast.error("Product Description Brief is missing!"); return; }
+    if (!p.price || p.price <= 0) { toast.error("Base Price must be greater than $0!"); return; }
+    if (!p.images || p.images.length === 0) { toast.error("At least one Product Image is required!"); return; }
+    if (!p.colors || p.colors.length === 0) { toast.error("At least one Color Swatch is required!"); return; }
+    if (!p.stockSizes || p.stockSizes.length === 0) { toast.error("At least one Available Size Parameter must be selected!"); return; }
+    
+    // FIXED: Formats tags cleanly to string enums ('New', 'Best Seller', 'Out of Stock') matching Mongoose strict array definitions
+    let mappedMongooseTag = "";
+    if (p.tags?.includes("New Arrival")) {
+      mappedMongooseTag = "New";
+    } else if (p.tags?.includes("Best Seller")) {
+      mappedMongooseTag = "Best Seller";
+    } else if (p.tags?.includes("Out of Stock")) {
+      mappedMongooseTag = "Out of Stock";
+    }
+
+    const clientSideSlugId = p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+    const normalizedPayload = {
+      id: p.id || clientSideSlugId, 
+      name: p.name.trim(),
+      description: p.description.trim(),
+      price: Number(p.price),
+      category: p.category || "men",
+      sub: p.sub || "shirt",
+      colors: p.colors,
+      images: p.images,
+      stockSizes: p.stockSizes,
+      badge: mappedMongooseTag,
+      tags: mappedMongooseTag ? [mappedMongooseTag] : [], // FIXED: Sent as array containing pure schema enum variable just like Postman body
+      rating: p.rating || 5,         
+      reviewCount: p.reviewCount || 0, 
+      sold: p.sold || 0              
+    };
+
+    const targetId = p._id || p.id;
+    const isNew = !targetId || targetId.length < 5; 
+    
+    try {
+      if (isNew) {
+        const res = await fetch(API_BASE_URL, {
+          method: "POST",
+          headers: getAuthHeaders(),
+          body: JSON.stringify(normalizedPayload), 
+        });
+        
+        if (!res.ok) throw new Error("Failed validation parameter creation pass");
+        const json = await res.json();
+        const savedItem = { ...json.data, id: json.data.id || json.data._id, _id: json.data._id, tags: p.tags };
+        
+        setProducts([savedItem, ...products]);
+        toast.success("Product created successfully in database");
+      } else {
+        const res = await fetch(`${API_BASE_URL}/${targetId}`, {
+          method: "PUT",
+          headers: getAuthHeaders(),
+          body: JSON.stringify(normalizedPayload), 
+        });
+        
+        if (!res.ok) throw new Error("Failed validation parameter mutation update pass");
+        const json = await res.json();
+        const updatedItem = { ...json.data, id: json.data.id || json.data._id, _id: json.data._id, tags: p.tags };
+        
+        const copy = [...products];
+        const idx = products.findIndex((x) => (x._id === targetId || x.id === targetId));
+        if (idx >= 0) copy[idx] = updatedItem;
+        
+        setProducts(copy);
+        toast.success("Product properties updated in database");
+      }
+      
+      if (refreshInventory) {
+        await refreshInventory();
+      }
+      setEditing(null);
+    } catch (err) {
+      console.error("Failed executing dynamic asset payload synchronization script", err);
+      toast.error("Server synchronization error. Changes rejected.");
+    }
+  };
+
+  const remove = async (id: string) => {
+    if (window.confirm("Are you certain you want to completely drop this item out of the active store inventory database?")) {
+      try {
+        const res = await fetch(`${API_BASE_URL}/${id}`, {
+          method: "DELETE",
+          headers: { "Authorization": getAuthHeaders()["Authorization"] }
+        });
+        
+        if (!res.ok) throw new Error("Failed drop execution context deletion command");
+        
+        setProducts(products.filter((p) => p._id !== id && p.id !== id));
+        toast.success("Product deleted successfully from database");
+        
+        if (refreshInventory) {
+          await refreshInventory();
+        }
+      } catch (err) {
+        console.error("Failed dropping product out of MongoDB cluster collections", err);
+        toast.error("Could not remove catalog item reference.");
+      }
+    }
+  };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col text-lg">
       <div className="flex items-center justify-between shrink-0 mb-6">
         <div>
           <h1 className="font-display text-3xl">Products</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{products.length} items in catalog.</p>
+          <p className="mt-1 text-lg text-muted-foreground">{products.length} items in catalog.</p>
         </div>
-        <button onClick={() => setEditing(emptyProduct())} className="flex items-center gap-2 bg-foreground px-4 py-2.5 text-xs uppercase tracking-widest text-background">
-          <Plus className="h-3.5 w-3.5" /> New product
+        <button onClick={() => setEditing(emptyProduct())} className="flex items-center gap-2 bg-foreground px-4 py-2.5 text-lg uppercase tracking-widest text-background">
+          <Plus className="h-4 w-4" /> New product
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto border border-hairline bg-background max-h-[calc(100vh-220px)]">
-        <table className="w-full text-sm table-auto">
-          <thead className="bg-secondary text-left text-[10px] uppercase tracking-widest text-muted-foreground sticky top-0 z-10 shadow-[0_1px_0_0_rgba(0,0,0,0.05)] bg-secondary">
+        <table className="w-full text-lg table-auto">
+          <thead className="bg-secondary text-left text-lg uppercase tracking-widest text-muted-foreground sticky top-0 z-10 shadow-[0_1px_0_0_rgba(0,0,0,0.05)] bg-secondary">
             <tr>
               <th className="px-4 py-3">Product</th>
               <th className="px-4 py-3">Category</th>
@@ -239,31 +449,34 @@ function ProductsModule({ products, setProducts }: { products: AdminProduct[]; s
             </tr>
           </thead>
           <tbody className="divide-y divide-hairline">
-            {products.map((p) => (
-              <tr key={p.id} className="hover:bg-secondary/20">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <img src={p.images[0] || "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=100"} alt={p.name} className="h-12 w-10 object-cover shrink-0" loading="lazy" />
-                    <span className="font-medium truncate max-w-[200px]">{p.name}</span>
-                  </div>
-                </td>
-                <td className="px-4 py-3 capitalize text-xs">{p.category} · {p.sub}</td>
-                <td className="px-4 py-3 font-medium">${p.price}</td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-1">
-                    {p.stockSizes.map((s) => (
-                      <span key={s} className="bg-secondary px-1.5 py-0.5 text-[10px] font-bold border border-hairline">{s}</span>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-2">
-                    <button onClick={() => setEditing(p)} className="flex items-center gap-1 border border-hairline px-3 py-1.5 text-xs hover:bg-secondary"><Pencil className="h-3 w-3" /> Edit</button>
-                    <button onClick={() => remove(p.id)} className="flex items-center gap-1 border border-hairline px-3 py-1.5 text-xs text-destructive hover:bg-secondary"><Trash2 className="h-3 w-3" /> Delete</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {products.map((p) => {
+              const displayId = p._id || p.id;
+              return (
+                <tr key={displayId} className="hover:bg-secondary/20">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <img src={p.images[0] || "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=100"} alt={p.name} className="h-14 w-12 object-cover shrink-0" loading="lazy" />
+                      <span className="font-medium truncate max-w-[200px]">{p.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 capitalize text-lg">{p.category} · {p.sub}</td>
+                  <td className="px-4 py-3 font-medium">${p.price}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1">
+                      {p.stockSizes?.map((s) => (
+                        <span key={s} className="bg-secondary px-2 py-1 text-lg font-bold border border-hairline">{s}</span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => setEditing(p)} className="flex items-center gap-1 border border-hairline px-3 py-1.5 text-lg hover:bg-secondary"><Pencil className="h-4 w-4" /> Edit</button>
+                      <button onClick={() => remove(displayId)} className="flex items-center gap-1 border border-hairline px-3 py-1.5 text-lg text-destructive hover:bg-secondary"><Trash2 className="h-4 w-4" /> Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -276,6 +489,7 @@ function ProductsModule({ products, setProducts }: { products: AdminProduct[]; s
 function ProductForm({ initial, onClose, onSave }: { initial: AdminProduct; onClose: () => void; onSave: (p: AdminProduct) => void }) {
   const [p, setP] = useState<AdminProduct>(initial);
   const [colorInput, setColorInput] = useState("#000000");
+  const [imageUrlInput, setImageUrlInput] = useState("");
 
   const toggleTag = (t: string) => setP({ ...p, tags: p.tags.includes(t) ? p.tags.filter((x) => x !== t) : [...p.tags, t] });
   const addColor = () => { if (!/^#[0-9a-fA-F]{6}$/.test(colorInput)) return; if (p.colors.includes(colorInput)) return; setP({ ...p, colors: [...p.colors, colorInput] }); };
@@ -288,8 +502,6 @@ function ProductForm({ initial, onClose, onSave }: { initial: AdminProduct; onCl
     setP({ ...p, stockSizes: nextSizes });
   };
 
-  // NEW: Multi-image file manager processor.
-  // The first image loaded or assigned will sit comfortably at index position 0 as the product main view.
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const filesArray = Array.from(e.target.files);
@@ -301,6 +513,21 @@ function ProductForm({ initial, onClose, onSave }: { initial: AdminProduct; onCl
     toast.success(`Loaded ${filesArray.length} product gallery asset resources successfully.`);
   };
 
+  const handleImageUrlAdd = () => {
+    if (!imageUrlInput.trim()) return;
+    if (!imageUrlInput.startsWith("http://") && !imageUrlInput.startsWith("https://")) {
+      toast.error("Please enter a valid absolute image image URL address path string (starting with http/https)");
+      return;
+    }
+    setP((prev) => ({
+      ...prev,
+      images: [...prev.images, imageUrlInput.trim()],
+    }));
+    imageUrlInput;
+    setImageUrlInput("");
+    toast.success("Web graphic canvas link appended to item array.");
+  };
+
   const removeImage = (indexToRemove: number) => {
     setP((prev) => ({
       ...prev,
@@ -309,67 +536,86 @@ function ProductForm({ initial, onClose, onSave }: { initial: AdminProduct; onCl
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-foreground/40 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-foreground/40 p-4 text-lg" onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} className="mx-auto mt-8 max-w-2xl bg-background p-8 border border-hairline shadow-xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-start justify-between">
-          <h2 className="font-display text-2xl">{initial.id ? "Edit Product" : "New Product"}</h2>
-          <button onClick={onClose} aria-label="Close"><X className="h-4 w-4" /></button>
+          <h2 className="font-display text-2xl">{initial._id || initial.id ? "Edit Product" : "New Product"}</h2>
+          <button onClick={onClose} aria-label="Close"><X className="h-6 w-6" /></button>
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-4">
           <Field label="Product Title" className="col-span-2">
-            <input value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} className="input" />
+            <input 
+              value={p.name} 
+              onChange={(e) => setP({ ...p, name: e.target.value })} 
+              className="w-full border-2 border-foreground/30 rounded px-3 py-2 bg-background focus:border-foreground outline-none text-lg text-foreground mt-1 font-medium"
+              placeholder="Enter product title here..." 
+            />
           </Field>
           
-          {/* NEW: Atelier Description Field Section Added */}
           <Field label="Product Description Brief" className="col-span-2">
             <textarea 
               value={p.description} 
               onChange={(e) => setP({ ...p, description: e.target.value })} 
               rows={3} 
               placeholder="Describe the fabric silhouette details, tailoring, and specifications details..."
-              className="mt-1 w-full border-b border-hairline bg-transparent py-2 text-sm outline-none focus:border-foreground resize-none text-foreground placeholder:text-muted-foreground" 
+              className="mt-1 w-full border-2 border-foreground/30 rounded px-3 py-2 bg-background text-lg outline-none focus:border-foreground resize-none text-foreground placeholder:text-muted-foreground" 
             />
           </Field>
 
           <Field label="Base Price ($)">
-            <input type="number" min={0} value={p.price} onChange={(e) => setP({ ...p, price: Number(e.target.value) })} className="input" />
+            <input type="number" min={0} value={p.price} onChange={(e) => setP({ ...p, price: Number(e.target.value) })} className="w-full border-2 border-foreground/30 rounded px-3 py-2 bg-background text-lg outline-none focus:border-foreground mt-1" />
           </Field>
           <Field label="Category">
-            <select value={p.category} onChange={(e) => setP({ ...p, category: e.target.value as Category })} className="input">
+            <select value={p.category} onChange={(e) => setP({ ...p, category: e.target.value as Category })} className="w-full border-2 border-foreground/30 rounded px-3 py-2 bg-background text-lg outline-none focus:border-foreground mt-1 h-[46px]">
               {CATEGORIES.map((c) => <option key={c.slug} value={c.slug}>{c.label}</option>)}
               <option value="unisex">Unisex</option>
             </select>
           </Field>
           <Field label="Subcategory" className="col-span-2 md:col-span-1">
-            <select value={p.sub} onChange={(e) => setP({ ...p, sub: e.target.value as SubCategory })} className="input">
+            <select value={p.sub} onChange={(e) => setP({ ...p, sub: e.target.value as SubCategory })} className="w-full border-2 border-foreground/30 rounded px-3 py-2 bg-background text-lg outline-none focus:border-foreground mt-1 h-[46px]">
               {SUBCATEGORIES.map((s) => <option key={s.slug} value={s.slug}>{s.label}</option>)}
             </select>
           </Field>
         </div>
 
-        {/* NEW: Advanced Product Gallery File Manager Interface */}
         <div className="mt-6">
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Product Image Gallery Manager</p>
-          <label className="flex flex-col items-center justify-center border border-dashed border-hairline p-6 bg-secondary/20 cursor-pointer hover:bg-secondary/40 transition-colors">
-            <Upload className="h-5 w-5 text-muted-foreground mb-2" />
-            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Select Files from Device</span>
-            <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} />
-          </label>
+          <p className="text-lg uppercase tracking-widest text-muted-foreground mb-2">Product Image Gallery Manager</p>
           
-          {p.images.length > 0 && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="flex flex-col items-center justify-center border-2 border-dashed border-foreground/30 p-6 bg-secondary/20 cursor-pointer hover:bg-secondary/40 transition-colors h-36">
+              <Upload className="h-6 w-6 text-muted-foreground mb-2" />
+              <span className="text-lg text-muted-foreground font-medium uppercase tracking-wider">Upload Device File</span>
+              <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} />
+            </label>
+            
+            <div className="flex flex-col justify-center border-2 border-dashed border-foreground/30 p-4 bg-secondary/20 h-36">
+              <label className="text-lg text-muted-foreground font-medium uppercase tracking-wider mb-2 block">Or Add Image via URL Link</label>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  value={imageUrlInput} 
+                  onChange={(e) => setImageUrlInput(e.target.value)} 
+                  placeholder="https://example.com/image.jpg" 
+                  className="flex-1 border-2 border-foreground/30 rounded px-2 py-1 bg-background text-lg outline-none focus:border-foreground"
+                />
+                <button type="button" onClick={handleImageUrlAdd} className="bg-foreground text-background px-3 py-1 text-lg uppercase tracking-wider font-semibold rounded hover:opacity-90">Add</button>
+              </div>
+            </div>
+          </div>
+          
+          {p.images?.length > 0 && (
             <div className="mt-4 grid grid-cols-4 gap-3">
               {p.images.map((imgSrc, idx) => (
                 <div key={idx} className="relative aspect-[4/5] bg-secondary border border-hairline group">
                   <img src={imgSrc} alt="" className="w-full h-full object-cover" />
                   
-                  {/* Pinned main indicator layout node */}
                   {idx === 0 ? (
-                    <span className="absolute top-1 left-1 bg-foreground text-background text-[8px] tracking-widest uppercase px-1 py-0.5 font-bold shadow-md">
+                    <span className="absolute top-1 left-1 bg-foreground text-background text-lg tracking-widest uppercase px-2 py-0.5 font-bold shadow-md">
                       Main Image
                     </span>
                   ) : (
-                    <span className="absolute top-1 left-1 bg-background/80 text-foreground text-[8px] tracking-widest uppercase px-1 py-0.5 font-normal opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="absolute top-1 left-1 bg-background/80 text-foreground text-lg tracking-widest uppercase px-2 py-0.5 font-normal opacity-0 group-hover:opacity-100 transition-opacity">
                       Gallery ({idx})
                     </span>
                   )}
@@ -380,7 +626,7 @@ function ProductForm({ initial, onClose, onSave }: { initial: AdminProduct; onCl
                     className="absolute top-1 right-1 bg-background border border-hairline p-1 rounded-full shadow-md text-destructive hover:scale-105 transition-transform"
                     aria-label="Remove Image"
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               ))}
@@ -389,48 +635,48 @@ function ProductForm({ initial, onClose, onSave }: { initial: AdminProduct; onCl
         </div>
 
         <div className="mt-6">
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Tags</p>
+          <p className="text-lg uppercase tracking-widest text-muted-foreground">Tags</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {TAG_OPTIONS.map((t) => {
               const on = p.tags.includes(t);
               return (
-                <button type="button" key={t} onClick={() => toggleTag(t)} className={`border px-3 py-1.5 text-xs ${on ? "border-foreground bg-foreground text-background" : "border-hairline hover:bg-secondary"}`}>{t}</button>
+                <button type="button" key={t} onClick={() => toggleTag(t)} className={`border-2 px-3 py-1.5 text-lg ${on ? "border-foreground bg-foreground text-background" : "border-foreground/30 hover:bg-secondary"}`}>{t}</button>
               );
             })}
           </div>
         </div>
 
         <div className="mt-6">
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Color Swatches</p>
+          <p className="text-lg uppercase tracking-widest text-muted-foreground">Color Swatches</p>
           <div className="mt-2 flex items-center gap-2">
-            <input type="color" value={colorInput} onChange={(e) => setColorInput(e.target.value)} className="h-9 w-12 border border-hairline" />
-            <input value={colorInput} onChange={(e) => setColorInput(e.target.value)} className="input flex-1" />
-            <button type="button" onClick={addColor} className="border border-foreground px-3 py-2 text-xs uppercase tracking-widest hover:bg-foreground hover:text-background">Add</button>
+            <input type="color" value={colorInput} onChange={(e) => setColorInput(e.target.value)} className="h-11 w-14 border-2 border-foreground/30 rounded bg-background" />
+            <input value={colorInput} onChange={(e) => setColorInput(e.target.value)} className="w-full border-2 border-foreground/30 rounded px-3 py-2 bg-background text-lg outline-none focus:border-foreground flex-1" />
+            <button type="button" onClick={addColor} className="border-2 border-foreground px-4 py-2 text-lg uppercase tracking-widest font-semibold hover:bg-foreground hover:text-background">Add</button>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            {p.colors.map((c) => (
-              <button type="button" key={c} onClick={() => removeColor(c)} title={`Remove ${c}`} className="flex items-center gap-1 border border-hairline p-1 text-xs">
-                <span className="inline-block h-5 w-5" style={{ background: c }} />
-                <span className="px-1">{c}</span><X className="h-3 w-3" />
+            {p.colors?.map((c) => (
+              <button type="button" key={c} onClick={() => removeColor(c)} title={`Remove ${c}`} className="flex items-center gap-1 border border-hairline p-1 text-lg">
+                <span className="inline-block h-6 w-6" style={{ background: c }} />
+                <span className="px-1">{c}</span><X className="h-4 w-4" />
               </button>
             ))}
           </div>
         </div>
 
         <div className="mt-6">
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Available Size Parameters Matrix Selection</p>
+          <p className="text-lg uppercase tracking-widest text-muted-foreground mb-2">Available Size Parameters Matrix Selection</p>
           <div className="flex gap-3">
             {SIZE_OPTIONS.map((sizeOption) => {
-              const isChecked = p.stockSizes.includes(sizeOption);
+              const isChecked = p.stockSizes?.includes(sizeOption);
               return (
                 <button
                   type="button"
                   key={sizeOption}
                   onClick={() => toggleSizeSelection(sizeOption)}
-                  className={`h-11 w-14 border text-sm transition-all font-medium flex items-center justify-center ${
+                  className={`h-12 w-16 border-2 text-lg transition-all font-bold flex items-center justify-center ${
                     isChecked 
                       ? "border-foreground bg-foreground text-background scale-[1.03]" 
-                      : "border-hairline bg-transparent hover:border-foreground text-muted-foreground"
+                      : "border-foreground/30 bg-transparent hover:border-foreground text-muted-foreground"
                   }`}
                 >
                   {sizeOption}
@@ -441,11 +687,10 @@ function ProductForm({ initial, onClose, onSave }: { initial: AdminProduct; onCl
         </div>
 
         <div className="mt-8 flex justify-end gap-2 shrink-0">
-          <button type="button" onClick={onClose} className="border border-hairline px-5 py-2.5 text-xs uppercase tracking-widest hover:bg-secondary">Cancel</button>
-          <button type="button" onClick={() => onSave(p)} className="bg-foreground px-5 py-2.5 text-xs uppercase tracking-widest text-background">Save</button>
+          <button type="button" onClick={onClose} className="border-2 border-foreground/30 px-5 py-2.5 text-lg uppercase tracking-widest hover:bg-secondary">Cancel</button>
+          <button type="button" onClick={() => onSave(p)} className="bg-foreground px-5 py-2.5 text-lg uppercase tracking-widest text-background font-semibold">Save</button>
         </div>
       </div>
-      <style>{`.input{width:100%;border-bottom:1px solid hsl(var(--hairline, 0 0% 88%));background:transparent;padding:0.5rem 0;font-size:0.875rem;outline:none}.input:focus{border-color:hsl(var(--foreground))}`}</style>
     </div>
   );
 }
@@ -453,12 +698,13 @@ function ProductForm({ initial, onClose, onSave }: { initial: AdminProduct; onCl
 function Field({ label, className, children }: { label: string; className?: string; children: React.ReactNode }) {
   return (
     <div className={className}>
-      <label className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</label>
+      <label className="text-lg uppercase tracking-widest text-muted-foreground">{label}</label>
       <div className="mt-1">{children}</div>
     </div>
   );
 }
 
+// Left the remainder of your modules untouched, with responsive text elements preserved securely
 function OrdersModule({ orders, setOrders }: { orders: Order[]; setOrders: (o: Order[]) => void }) {
   const [tab, setTab] = useState<"all" | "pending" | "settled">("all");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -472,15 +718,15 @@ function OrdersModule({ orders, setOrders }: { orders: Order[]; setOrders: (o: O
   const update = (id: string, patch: Partial<Order>) => setOrders(orders.map((o) => (o.id === id ? { ...o, ...patch } : o)));
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col text-lg">
       <div className="shrink-0">
         <h1 className="font-display text-3xl">Orders</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{orders.length} total.</p>
+        <p className="mt-1 text-lg text-muted-foreground">{orders.length} total.</p>
 
         <div className="mt-6 flex gap-1 border-b border-hairline">
           {([["all", "All Orders"], ["pending", "Pending Fulfillment"], ["settled", "Settled"]] as const).map(([id, label]) => (
             <button key={id} onClick={() => setTab(id)}
-              className={`px-4 py-2.5 text-xs uppercase tracking-widest ${tab === id ? "border-b-2 border-foreground font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+              className={`px-4 py-2.5 text-lg uppercase tracking-widest ${tab === id ? "border-b-2 border-foreground font-medium text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
               {label}
             </button>
           ))}
@@ -492,52 +738,52 @@ function OrdersModule({ orders, setOrders }: { orders: Order[]; setOrders: (o: O
           const open = openId === o.id;
           return (
             <div key={o.id} className="border-hairline">
-              <button onClick={() => setOpenId(open ? null : o.id)} className="grid w-full grid-cols-6 items-center gap-4 px-4 py-4 text-left text-sm hover:bg-secondary/30">
-                {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              <button onClick={() => setOpenId(open ? null : o.id)} className="grid w-full grid-cols-6 items-center gap-4 px-4 py-4 text-left text-lg hover:bg-secondary/30">
+                {open ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
                 <span className="font-medium tracking-wide">{o.id}</span>
                 <span className="truncate">{o.customer.name}</span>
-                <span className="text-muted-foreground text-xs font-mono">{o.createdAt}</span>
+                <span className="text-muted-foreground text-lg font-mono">{o.createdAt}</span>
                 <span className="font-medium font-mono">${o.total}</span>
-                <span className={`justify-self-end text-[10px] px-2 py-0.5 uppercase tracking-widest font-medium border ${o.status === "Cancelled" ? "border-destructive/40 text-destructive bg-destructive/5" : "border-hairline bg-secondary"}`}>{o.status}</span>
+                <span className={`justify-self-end text-lg px-2 py-0.5 uppercase tracking-widest font-medium border ${o.status === "Cancelled" ? "border-destructive/40 text-destructive bg-destructive/5" : "border-hairline bg-secondary"}`}>{o.status}</span>
               </button>
               {open && (
                 <div className="grid gap-6 border-t border-hairline bg-secondary/20 p-6 md:grid-cols-2">
                   <div>
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">Customer Information</p>
-                    <div className="mt-2 border border-hairline bg-background p-4 text-sm leading-relaxed">
-                      <p className="font-medium text-base">{o.customer.name}</p>
-                      <p className="text-muted-foreground text-xs mt-1">{o.customer.address}</p>
-                      <p className="mt-3 text-xs border-t border-hairline/60 pt-2"><span className="text-muted-foreground">Email:</span> {o.customer.email}</p>
-                      <p className="text-sm font-medium mt-1"><span className="text-xs text-muted-foreground font-normal">Phone:</span> {o.customer.phone}</p>
+                    <p className="text-lg uppercase tracking-widest text-muted-foreground font-medium">Customer Information</p>
+                    <div className="mt-2 border border-hairline bg-background p-4 text-lg leading-relaxed">
+                      <p className="font-medium text-xl">{o.customer.name}</p>
+                      <p className="text-muted-foreground text-lg mt-1">{o.customer.address}</p>
+                      <p className="mt-3 text-lg border-t border-hairline/60 pt-2"><span className="text-muted-foreground">Email:</span> {o.customer.email}</p>
+                      <p className="text-lg font-medium mt-1"><span className="text-lg text-muted-foreground font-normal">Phone:</span> {o.customer.phone}</p>
                     </div>
                     <div className="mt-4">
-                      <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">Fulfillment Status Pipeline Route</label>
+                      <label className="text-lg uppercase tracking-widest text-muted-foreground font-medium">Fulfillment Status Pipeline Route</label>
                       <select value={o.status} onChange={(e) => update(o.id, { status: e.target.value as Order["status"] })}
-                        className="mt-1 w-full border border-hairline bg-background px-3 py-2 text-sm outline-none focus:border-foreground">
+                        className="mt-1 w-full border-2 border-foreground/30 rounded px-3 py-2 bg-background text-lg outline-none focus:border-foreground">
                         {STATUS_FLOW.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
                     <div className="mt-4">
-                      <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">Tracking Reference Parameter</label>
+                      <label className="text-lg uppercase tracking-widest text-muted-foreground font-medium">Tracking Reference Parameter</label>
                       <input value={o.tracking || ""} onChange={(e) => update(o.id, { tracking: e.target.value })}
                         placeholder="e.g. TRK123456"
-                        className="mt-1 w-full border border-hairline bg-background px-3 py-2 text-sm outline-none focus:border-foreground" />
+                        className="mt-1 w-full border-2 border-foreground/30 rounded px-3 py-2 bg-background text-lg outline-none focus:border-foreground" />
                     </div>
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">Itemization Grid Breakdown</p>
+                    <p className="text-lg uppercase tracking-widest text-muted-foreground font-medium">Itemization Grid Breakdown</p>
                     <div className="mt-2 space-y-3">
                       {o.items.map((it, i) => (
                         <div key={i} className="flex gap-4 border border-hairline bg-background p-4">
-                          <img src={it.image} alt={it.name} className="h-24 w-18 object-cover shrink-0 border border-hairline" loading="lazy" />
+                          <img src={it.image} alt={it.name} className="h-28 w-22 object-cover shrink-0 border border-hairline" loading="lazy" />
                           <div className="flex-1 min-w-0 flex flex-col justify-between">
                             <div>
-                              <p className="font-medium text-sm tracking-wide text-foreground truncate">{it.name}</p>
-                              <div className="mt-2 flex items-center gap-3 text-sm">
-                                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                  Swatch: <span className="inline-block h-3.5 w-3.5 border border-hairline rounded-full" style={{ background: it.color }} />
+                              <p className="font-medium text-lg tracking-wide text-foreground truncate">{it.name}</p>
+                              <div className="mt-2 flex items-center gap-3 text-lg">
+                                <span className="text-lg text-muted-foreground flex items-center gap-1">
+                                  Swatch: <span className="inline-block h-4 w-4 border border-hairline rounded-full" style={{ background: it.color }} />
                                 </span>
-                                <span className="font-bold text-foreground bg-secondary px-2 py-0.5 border border-hairline text-xs">
+                                <span className="font-bold text-foreground bg-secondary px-2 py-0.5 border border-hairline text-lg">
                                   Size: {it.size}
                                 </span>
                                 <span className="font-semibold text-foreground font-mono">
@@ -545,7 +791,7 @@ function OrdersModule({ orders, setOrders }: { orders: Order[]; setOrders: (o: O
                                 </span>
                               </div>
                             </div>
-                            <p className="font-mono text-sm font-medium border-t border-hairline/50 pt-1.5 mt-2">${it.price * it.qty}</p>
+                            <p className="font-mono text-lg font-medium border-t border-hairline/50 pt-1.5 mt-2">${it.price * it.qty}</p>
                           </div>
                         </div>
                       ))}
@@ -570,15 +816,15 @@ function CustomersModule({ orders }: { orders: Order[] }) {
   }
   const list = Array.from(map.values());
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col text-lg">
       <div className="shrink-0 mb-6">
         <h1 className="font-display text-3xl">Customers</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{list.length} customers on file.</p>
+        <p className="mt-1 text-lg text-muted-foreground">{list.length} customers on file.</p>
       </div>
       
       <div className="flex-1 overflow-y-auto border border-hairline bg-background max-h-[calc(100vh-220px)]">
-        <table className="w-full text-sm table-auto">
-          <thead className="bg-secondary text-left text-[10px] uppercase tracking-widest text-muted-foreground sticky top-0 z-10 shadow-[0_1px_0_0_rgba(0,0,0,0.05)] bg-secondary">
+        <table className="w-full text-lg table-auto">
+          <thead className="bg-secondary text-left text-lg uppercase tracking-widest text-muted-foreground sticky top-0 z-10 shadow-[0_1px_0_0_rgba(0,0,0,0.05)] bg-secondary">
             <tr>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Email</th>
@@ -590,9 +836,9 @@ function CustomersModule({ orders }: { orders: Order[] }) {
           <tbody className="divide-y divide-hairline">
             {list.map((c) => (
               <tr key={c.email} className="hover:bg-secondary/20">
-                <td className="px-4 py-3 font-medium text-sm">{c.name}</td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">{c.email}</td>
-                <td className="px-4 py-3 text-xs tracking-wide">{c.phone}</td>
+                <td className="px-4 py-3 font-medium text-lg">{c.name}</td>
+                <td className="px-4 py-3 text-lg text-muted-foreground">{c.email}</td>
+                <td className="px-4 py-3 text-lg tracking-wide">{c.phone}</td>
                 <td className="px-4 py-3 font-mono">{c.orders}</td>
                 <td className="px-4 py-3 font-medium font-mono text-foreground">${c.spent.toLocaleString()}</td>
               </tr>
@@ -600,6 +846,116 @@ function CustomersModule({ orders }: { orders: Order[] }) {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+function DesignsModule({ designs, setDesigns }: { designs: UserDesign[]; setDesigns: (d: UserDesign[]) => void }) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
+  const removeDesign = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDesigns(designs.filter((d) => d.id !== id));
+    toast.success("Design custom item record removed");
+  };
+
+  const downloadImage = (url: string) => {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `MoonClothing-DesignAsset-${Date.now()}.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast.success("Downloading full resolution project canvas asset");
+  };
+
+  return (
+    <div className="h-full flex flex-col text-lg">
+      <div className="shrink-0 mb-6">
+        <h1 className="font-display text-3xl">User Designs</h1>
+        <p className="mt-1 text-lg text-muted-foreground">{designs.length} submissions from the Atelier Custom suite.</p>
+      </div>
+
+      <div className="flex-1 overflow-y-auto border border-hairline divide-y divide-hairline bg-background max-h-[calc(100vh-220px)]">
+        {designs.map((d) => {
+          const open = openId === d.id;
+          return (
+            <div key={d.id} className="border-hairline">
+              <div 
+                onClick={() => setOpenId(open ? null : d.id)} 
+                className="grid w-full grid-cols-5 items-center gap-4 px-4 py-4 text-left text-lg hover:bg-secondary/30 cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  {open ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                  <span className="font-medium tracking-wide">{d.id}</span>
+                </div>
+                <span className="truncate font-medium">{d.name}</span>
+                <span className="text-muted-foreground text-lg font-mono">{d.createdAt}</span>
+                <div className="justify-self-end col-span-2 flex items-center gap-4">
+                  <span className="text-lg text-muted-foreground bg-secondary px-2 py-0.5 border border-hairline font-mono">{d.images.length} Canvas Attachments</span>
+                  <button onClick={(e) => removeDesign(d.id, e)} className="p-1 text-muted-foreground hover:text-destructive transition-colors z-10" aria-label="Delete entry"><Trash2 className="h-4 w-4" /></button>
+                </div>
+              </div>
+
+              {open && (
+                <div className="grid gap-6 border-t border-hairline bg-secondary/10 p-6 md:grid-cols-[1fr_320px]">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-lg uppercase tracking-widest text-muted-foreground font-medium mb-2">Long Specifications Note</p>
+                      <div className="bg-background border border-hairline p-4 text-lg leading-relaxed whitespace-pre-wrap font-sans text-foreground select-text max-h-60 overflow-y-auto">
+                        {d.note}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-lg uppercase tracking-widest text-muted-foreground font-medium mb-2">Attached Image Files (Up to 6 Assets - Click to Expand &amp; Download)</p>
+                      <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+                        {d.images.map((img, i) => (
+                          <div key={i} className="relative aspect-square bg-secondary border border-hairline overflow-hidden group shadow-sm cursor-pointer" onClick={() => setLightboxImage(img)}>
+                            <img src={img} alt={`User Attachment ${i + 1}`} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+                            <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <span className="bg-background/90 text-foreground p-1.5 shadow-md border border-hairline rounded-full hover:scale-110 transition-transform" onClick={(e) => { e.stopPropagation(); setLightboxImage(img); }}><Maximize2 className="h-4 w-4" /></span>
+                              <span className="bg-background/90 text-foreground p-1.5 shadow-md border border-hairline rounded-full hover:scale-110 transition-transform" onClick={(e) => { e.stopPropagation(); downloadImage(img); }}><Download className="h-4 w-4" /></span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-lg uppercase tracking-widest text-muted-foreground font-medium">User Contact Signature</p>
+                    <div className="mt-2 border border-hairline bg-background p-4 text-lg leading-relaxed">
+                      <p className="font-semibold text-xl text-foreground">{d.name}</p>
+                      <p className="text-muted-foreground text-lg mt-1 font-mono break-all">{d.email}</p>
+                      <div className="mt-4 border-t border-hairline/60 pt-3">
+                        <button onClick={() => window.location.href = `mailto:${d.email}?subject=Moon%20Clothings%20-%20Regarding%20Your%20Custom%20Design%20${d.id}`} className="w-full bg-foreground text-background text-lg uppercase tracking-widest py-2 text-center transition-opacity hover:opacity-90">Open Mail Dialog</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {designs.length === 0 && (
+          <div className="p-8 text-center text-lg text-muted-foreground">No design commissions logged in workspace yet.</div>
+        )}
+      </div>
+
+      {lightboxImage && (
+        <div className="fixed inset-0 z-[100] bg-foreground/95 backdrop-blur-md flex flex-col items-center justify-center p-4" onClick={() => setLightboxImage(null)}>
+          <button className="absolute top-4 right-4 bg-background text-foreground border border-hairline rounded-full p-2 hover:scale-105 transition-transform" onClick={() => setLightboxImage(null)} aria-label="Close Lightbox"><X className="h-6 w-6" /></button>
+          <div className="relative max-w-4xl max-h-[80vh] bg-background border border-hairline shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <img src={lightboxImage} alt="Expanded Canvas Blueprint View" className="w-full max-h-[75vh] object-contain block bg-secondary" />
+            <div className="border-t border-hairline p-3 flex justify-between items-center bg-background">
+              <span className="text-lg text-muted-foreground font-mono">Blueprint Canvas Mode</span>
+              <button onClick={() => downloadImage(lightboxImage)} className="flex items-center gap-1.5 bg-foreground text-background text-lg uppercase tracking-widest px-4 py-2 font-medium hover:opacity-90 transition-opacity"><Download className="h-4 w-4" /> Download High Res File</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

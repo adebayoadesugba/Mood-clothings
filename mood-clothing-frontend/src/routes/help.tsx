@@ -26,10 +26,10 @@ const TOPICS = [
 
 function HelpPage() {
   return (
-    <div className="mx-auto max-w-[1100px] px-4 py-12 md:px-8 md:py-16">
+    <div className="mx-auto max-w-[1400px] px-4 py-12 md:px-8 md:py-16">
       <Breadcrumbs items={[{ label: "Help & Support" }]} />
       <header className="mt-6 max-w-2xl">
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">Support</p>
+        <p className="text-lg uppercase tracking-widest text-muted-foreground">Support</p>
         <h1 className="mt-3 font-display text-5xl md:text-6xl">How can we help?</h1>
         <p className="mt-4 text-muted-foreground">
           Browse a topic below, or reach our client care team directly — we respond within one business day.
@@ -39,8 +39,8 @@ function HelpPage() {
       <section className="mt-12 grid gap-px bg-hairline sm:grid-cols-2 lg:grid-cols-3">
         {TOPICS.map((t) => (
           <div key={t.title} className="bg-background p-6">
-            <h2 className="font-display text-xl">{t.title}</h2>
-            <p className="mt-2 text-sm text-muted-foreground">{t.body}</p>
+            <h2 className="font-display text-2xl">{t.title}</h2>
+            <p className="mt-2 text-lg text-muted-foreground">{t.body}</p>
           </div>
         ))}
       </section>
@@ -48,7 +48,7 @@ function HelpPage() {
       <section className="mt-16 hairline-t pt-10 md:flex md:items-center md:justify-between">
         <div>
           <h2 className="font-display text-3xl">Still need a hand?</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Reach the Mood Clothings   team through your preferred channel.</p>
+          <p className="mt-2 text-lg text-muted-foreground">Reach the Mood Clothings   team through your preferred channel.</p>
         </div>
         <div className="mt-6 flex flex-wrap gap-3 md:mt-0">
           <Link to="/contact" className="bg-foreground px-6 py-3 text-xs uppercase tracking-widest text-background">

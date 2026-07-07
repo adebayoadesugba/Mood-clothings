@@ -28,10 +28,10 @@ function ContactPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1100px] px-4 py-12 md:px-8 md:py-16">
+    <div className="mx-auto max-w-[1400px] px-4 py-12 md:px-8 md:py-16">
       <Breadcrumbs items={[{ label: "Contact" }]} />
       <header className="mt-6 max-w-2xl">
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">Client Care</p>
+        <p className="text-lg uppercase tracking-widest text-muted-foreground">Client Care</p>
         <h1 className="mt-3 font-display text-5xl md:text-6xl">We're here to help.</h1>
         <p className="mt-4 text-muted-foreground">
           Questions about sizing, orders, or a custom design? Our team responds within one business day.
@@ -39,27 +39,27 @@ function ContactPage() {
       </header>
 
       <div className="mt-12 grid gap-10 md:grid-cols-[1fr_1.2fr]">
-        <aside className="space-y-6 text-sm">
+        <aside className="space-y-6 text-lg">
           <div>
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">Email</div>
+            <div className="text-lg uppercase tracking-widest text-muted-foreground">Email</div>
             <a href="mailto:care@moodclothings.shop" className="mt-1 block">care@moodclothings.shop</a>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">Phone</div>
+            <div className="text-lg uppercase tracking-widest text-muted-foreground">Phone</div>
             <a href="tel:+2348078457247" className="mt-1 block">+234 807 845 7247</a>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">WhatsApp</div>
+            <div className="text-lg uppercase tracking-widest text-muted-foreground">WhatsApp</div>
             <a href="https://wa.me/2348078457247" target="_blank" rel="noreferrer" className="mt-1 block">
               Chat with us
             </a>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">Studio</div>
+            <div className="text-lg uppercase tracking-widest text-muted-foreground">Studio</div>
             <p className="mt-1">14 Elegushi Way<br />Lekki, Lagos<br />Nigeria</p>
           </div>
           <div>
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">Hours</div>
+            <div className="text-lg uppercase tracking-widest text-muted-foreground">Hours</div>
             <p className="mt-1">Mon–Fri · 9:00–18:00 WAT<br />Sat · 10:00–15:00 WAT</p>
           </div>
         </aside>
@@ -67,20 +67,20 @@ function ContactPage() {
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block">
-              <span className="text-xs uppercase tracking-widest text-muted-foreground">Name</span>
+              <span className="text-lg uppercase tracking-widest text-muted-foreground">Name</span>
               <input required name="name" className="mt-2 w-full border border-border bg-background px-3 py-3 text-sm outline-none focus:border-foreground" />
             </label>
             <label className="block">
-              <span className="text-xs uppercase tracking-widest text-muted-foreground">Email</span>
+              <span className="text-lg uppercase tracking-widest text-muted-foreground">Email</span>
               <input required type="email" name="email" className="mt-2 w-full border border-border bg-background px-3 py-3 text-sm outline-none focus:border-foreground" />
             </label>
           </div>
           <label className="block">
-            <span className="text-xs uppercase tracking-widest text-muted-foreground">Subject</span>
+            <span className="text-lg uppercase tracking-widest text-muted-foreground">Subject</span>
             <input name="subject" className="mt-2 w-full border border-border bg-background px-3 py-3 text-sm outline-none focus:border-foreground" />
           </label>
           <label className="block">
-            <span className="text-xs uppercase tracking-widest text-muted-foreground">Message</span>
+            <span className="text-lg uppercase tracking-widest text-muted-foreground">Message</span>
             <textarea required name="message" rows={6} className="mt-2 w-full border border-border bg-background px-3 py-3 text-sm outline-none focus:border-foreground" />
           </label>
           <button

@@ -30,7 +30,9 @@ type Ctx = StoreState & {
   clearCart: () => void;
   registerLiveProducts: (products: any[]) => void; 
   findProduct: (id: string) => any; // <-- CRUCIAL TYPE HOOKUP FIXED
+  refreshInventory: () => Promise<void>; // <-- NEW: EXPOSED METHOD TYPE FOR ADMIN RE-SYNCING
   PRODUCTS: any[]; 
+  isLoading: boolean; // <-- NEW: EXPOSED LOADING TRACKER PARAMETER INTERFACE TYPING
   cartTotal: number;
   cartCount: number;
 };
@@ -69,6 +71,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Holds dynamic backend items fetched from MongoDB across the application instance lifecycle
   const [liveRegistry, setLiveRegistry] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true); // whitespace framework sync loading tracking state
 
   // Safely sync localStorage cache data ONLY once the client layout safely mounts
   useEffect(() => {
@@ -79,31 +82,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  // FIXED REUSABLE INVENTORY SYNC PIPELINE: Pulls directly from MongoDB architecture
+  const refreshInventory = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetchAllProducts();
+      const dataPayload = response?.data?.data || response?.data || [];
+      const arrayToMap = Array.isArray(dataPayload) ? dataPayload : [];
+      
+      const formatted = arrayToMap.map((p: any) => ({
+        ...p,
+        id: p.id || convertToSlug(p.name), // Syncs url identifier matching directly into the global array
+        databaseId: p._id,
+        // FIXED BADGE INTERCEPTOR: Prioritizes valid long tags array entries, otherwise safely reads p.badge text parameters
+        badge: p.tags && p.tags.length > 0 && p.tags[0] !== "" ? p.tags[0] : (p.badge || null),
+        colors: p.colors && p.colors.length > 0 ? p.colors : ['#000000'],
+        images: p.images && p.images.length > 0 ? p.images : ['https://images.unsplash.com/photo-1521572267360-ee0c2909d518'],
+        rating: p.rating || 4.5,
+        reviewCount: p.reviewCount || 0,
+        category: p.category || "collection",
+        sub: p.sub || "all"
+      }));
+      setLiveRegistry(formatted);
+    } catch (err) {
+      console.error("Global store failed to sync backend inventory:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Automatically pull backend inventory on application boot to prevent loss on hard reload
   useEffect(() => {
-    const bootstrapLiveInventory = async () => {
-      try {
-        const response = await fetchAllProducts();
-        const formatted = response.data.data.map((p: any) => ({
-          ...p,
-          id: convertToSlug(p.name), // Syncs url identifier matching directly into the global array
-          databaseId: p._id,
-          badge: p.tags && p.tags.length > 0 ? p.tags[0] : null,
-          colors: p.colors && p.colors.length > 0 ? p.colors : ['#000000'],
-          images: p.images && p.images.length > 0 ? p.images : ['https://images.unsplash.com/photo-1521572267360-ee0c2909d518'],
-          rating: p.rating || 4.5,
-          reviewCount: p.reviewCount || 0,
-          category: p.category || "collection",
-          sub: p.sub || "all"
-        }));
-        setLiveRegistry(formatted);
-      } catch (err) {
-        console.error("Global store failed to sync backend inventory:", err);
-      }
-    };
-
-    bootstrapLiveInventory();
-  }, []);
+    refreshInventory();
+  }, [refreshInventory]);
 
   // Kept for backward compatibility if specific routes pass items manually
   const registerLiveProducts = useCallback((products: any[]) => {
@@ -162,6 +173,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setQty = useCallback((id: string, qty: number) => {
     setState((s) => ({
       ...s,
+      ...state,
       cart: qty <= 0 ? s.cart.filter((c) => c.id !== id) : s.cart.map((c) => (c.id === id ? { ...c, qty } : c)),
     }));
   }, []);
@@ -210,7 +222,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     clearCart,
     registerLiveProducts,
     findProduct, // <-- FIXED: INJECTED NATIVE METHOD EXPORT TO CONTEXT PROVIDER VALUE
+    refreshInventory, // <-- EXPOSED SYNC ACTION TO UPDATE INVENTORY LOCALLY ACROSS THE APP
     PRODUCTS: liveRegistry,
+    isLoading, // <-- EXPOSED LIVE STATUS TRACKER TO UI LAYERS
     cartTotal, cartCount,
   };
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

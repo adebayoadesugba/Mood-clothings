@@ -15,18 +15,18 @@ export const Route = createFileRoute("/privacy")({
 
 function PrivacyPage() {
   return (
-    <div className="mx-auto max-w-[860px] px-4 py-12 md:px-8 md:py-16">
+    <div className="mx-auto max-w-[1400px] px-4 py-12 md:px-8 md:py-16">
       <Breadcrumbs items={[{ label: "Privacy Policy" }]} />
       <header className="mt-6">
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">Legal</p>
+        <p className="text-lg uppercase tracking-widest text-muted-foreground">Legal</p>
         <h1 className="mt-3 font-display text-5xl md:text-6xl">Privacy Policy</h1>
-        <p className="mt-3 text-sm text-muted-foreground">Last updated: July 2, 2026</p>
+        <p className="mt-3 text-lg text-muted-foreground">Last updated: July 2, 2026</p>
       </header>
 
-      <article className="prose prose-neutral mt-10 max-w-none text-sm leading-7 text-foreground/90">
+      <article className="prose prose-neutral mt-10 max-w-none text-lg leading-7 text-foreground/90">
         <p>
           Mood Clothings ("we", "us", "our") respects your privacy. This policy explains what information we
-          collect, how we use it, and the choices you have. By using moodclothings.shop you agree to the
+          collect, how we use it, and the choices you have. By using Mood Clothings.shop you agree to the
           practices described here.
         </p>
 

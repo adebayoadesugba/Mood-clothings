@@ -16,8 +16,8 @@ function Home() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
   const carouselRef = useRef<HTMLDivElement>(null);
   
-  // Grab global synchronized tracking arrays straight from your initialized store context
-  const { cart, recent, PRODUCTS: liveProducts } = useStore(); 
+  // Grab global synchronized tracking arrays and loader flags straight from your store context
+  const { cart, recent, PRODUCTS: liveProducts, isLoading } = useStore(); 
 
   // Combine Mock Items and Database Items dynamically into one uniform array
   const combinedProducts = useMemo(() => {
@@ -50,23 +50,33 @@ function Home() {
     }
   };
 
-  const lookProducts = useMemo(() => {
-    const selectedIds = ["silhouette-puffer", "crystal-midi", "alia-boots"];
-    const filtered = combinedProducts.filter((p: Product) => selectedIds.includes(p.id));
+  // Generates an automated randomized array selection loop of exactly 8 items on fresh layout shifts
+  const randomShowcaseProducts = useMemo(() => {
+    if (!combinedProducts || combinedProducts.length === 0) return [];
+    const shufflableCopy = [...combinedProducts];
     
-    return filtered.sort((a: Product, b: Product) => {
-      const scoreA = (cart.filter((item: { id: string }) => item.id === a.id).length * 3) + (recent.includes(a.id) ? 1 : 0);
-      const scoreB = (cart.filter((item: { id: string }) => item.id === b.id).length * 3) + (recent.includes(b.id) ? 1 : 0);
-      
-      if (scoreB === scoreA) {
-        return b.reviewCount - a.reviewCount;
-      }
-      
-      return scoreB - scoreA;
-    });
-  }, [cart, recent, combinedProducts]);
+    // Perform standard linear collection deck shuffle
+    for (let i = shufflableCopy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = shufflableCopy[i];
+      shufflableCopy[i] = shufflableCopy[j];
+      shufflableCopy[j] = temp;
+    }
+    
+    return shufflableCopy.slice(0, 8);
+  }, [combinedProducts]);
 
-  const topProductInLook = lookProducts[0] || combinedProducts[0];
+  // FIXED GLOBAL INTERCEPTOR SKELETON: Displays a geometric rolling spinner ring while network request handles fetch payloads
+  if (isLoading) {
+    return (
+      <div className="min-h-[85vh] w-full grid place-items-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 border-[3px] border-hairline border-t-foreground rounded-full animate-spin" />
+          <p className="text-lg uppercase tracking-widest text-muted-foreground font-mono">Welcome To Mood Clothings...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 md:px-8">
@@ -89,8 +99,7 @@ function Home() {
               Elevate your wardrobe and embrace your unique elegance with every click.
             </p>
             <Link
-              to="/collection"
-              params={{ gender: "women" }}
+              to="/"
               className="mt-8 inline-flex items-center gap-2 border border-background/60 bg-background/10 px-6 py-3 text-xs uppercase tracking-widest backdrop-blur transition-transform hover:scale-[1.02]"
             >
               See Collection <ArrowUpRight className="h-4 w-4" />
@@ -132,7 +141,7 @@ function Home() {
         </div>
 
         <div className="mt-10 text-center">
-          <Link to="/new-arrivals" params={{ gender: "women" }} className="inline-flex items-center gap-2 border border-hairline px-6 py-3 text-[11px] uppercase tracking-widest hover:border-foreground">
+          <Link to="/" className="inline-flex items-center gap-2 border border-hairline px-6 py-3 text-[11px] uppercase tracking-widest hover:border-foreground">
             See More Products <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>
@@ -160,7 +169,7 @@ function Home() {
           </div>
         </div>
         <div className="mt-8 text-center">
-          <Link to="/new-arrivals" params={{ gender: "women" }} className="inline-flex items-center gap-2 border border-foreground bg-background px-6 py-3 text-[11px] uppercase tracking-widest hover:bg-foreground hover:text-background">
+          <Link to="/" className="inline-flex items-center gap-2 border border-foreground bg-background px-6 py-3 text-[11px] uppercase tracking-widest hover:bg-foreground hover:text-background">
             See Our New Collection <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>
@@ -215,57 +224,17 @@ function Home() {
         </div>
       </section>
 
-      {/* Shop the look */}
-      <section className="py-12">
-        <div className="grid gap-8 md:grid-cols-[1fr_1fr]">
-          
-          {/* DYNAMIC BIG IMAGE */}
-          <div className="overflow-hidden rounded-md bg-secondary relative group">
-            <Link to="/product/$id" params={{ id: topProductInLook?.id }}>
-              <img
-                src={topProductInLook?.images[0]}
-                alt={`Featured look: ${topProductInLook?.name}`}
-                loading="lazy"
-                className="h-full max-h-[720px] w-full object-cover transition-transform duration-700 group-hover:scale-105 will-change-transform"
-              />
-              <div className="absolute top-4 left-4 bg-foreground text-background text-[9px] uppercase tracking-widest px-3 py-1.5 rounded-sm">
-                Trending Piece
-              </div>
-            </Link>
-          </div>
-
-          {/* Dynamic Ordered List */}
-          <div>
-            <h2 className="font-display text-2xl md:text-3xl">Item in This Look</h2>
-            <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Sorted by popularity</p>
-            
-            <ul className="mt-6 divide-y divide-[color:var(--hairline)]">
-              {lookProducts.map((p) => (
-                <li key={p.id} className="flex items-center gap-4 py-4">
-                  <Link to="/product/$id" params={{ id: p.id }}>
-                    <img src={p.images[0]} alt={p.name} className="h-20 w-16 object-cover border border-hairline" />
-                  </Link>
-                  <div className="min-w-0 flex-1">
-                    <Link to="/product/$id" params={{ id: p.id }} className="block truncate text-xs uppercase tracking-widest font-medium">
-                      {p.name}
-                    </Link>
-                    <div className="mt-1 text-sm tabular-nums">${p.price}</div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
-                      {p.reviewCount} orders placed
-                    </div>
-                  </div>
-                  <Link
-                    to="/product/$id"
-                    params={{ id: p.id }}
-                    className="shrink-0 border border-hairline px-4 py-2 text-[10px] uppercase tracking-widest hover:border-foreground transition-colors bg-background"
-                  >
-                    Add to Cart
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-          
+      {/* DISCOVER MORE PIECES: Minimalist 8 Random product shuffle loop array showcase grid */}
+      <section className="py-16 border-t border-hairline">
+        <div className="mb-8">
+          <h2 className="font-display text-3xl md:text-4xl">Discover More Pieces</h2>
+          <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Freshly rotated items from the atelier console</p>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
+          {randomShowcaseProducts.map((p) => (
+            <ProductCard key={p.id || p._id} product={p} />
+          ))}
         </div>
       </section>
 
