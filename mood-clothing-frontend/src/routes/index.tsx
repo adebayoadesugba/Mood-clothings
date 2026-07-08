@@ -50,7 +50,7 @@ function Home() {
     }
   };
 
-  // Generates an automated randomized array selection loop of exactly 8 items on fresh layout shifts
+  // Generates an automated randomized array selection loop of exactly 10 items on fresh layout shifts
   const randomShowcaseProducts = useMemo(() => {
     if (!combinedProducts || combinedProducts.length === 0) return [];
     const shufflableCopy = [...combinedProducts];
@@ -63,7 +63,7 @@ function Home() {
       shufflableCopy[j] = temp;
     }
     
-    return shufflableCopy.slice(0, 8);
+    return shufflableCopy.slice(0, 10);
   }, [combinedProducts]);
 
   // FIXED GLOBAL INTERCEPTOR SKELETON: Displays a geometric rolling spinner ring while network request handles fetch payloads
@@ -208,7 +208,7 @@ function Home() {
               key={s.slug}
               to="/shop/$gender/$sub"
               params={{ gender: CATEGORIES[i % CATEGORIES.length].slug, sub: s.slug }}
-              className="group block overflow-hidden rounded-md bg-secondary snap-start flex-shrink-0 w-[calc(50%-8px)] md:w-[calc(33.333%-16px)] lg:w-[calc(25%-18px)]"
+              className="group block overflow-hidden rounded-md bg-secondary snap-start flex-shrink-0 w-[calc(50%-8px)] md:w-[calc(33.333%-16px)] lg:w-[calc(20%-18px)]"
             >
               <div className="overflow-hidden aspect-[3/4]">
                 <img
@@ -231,7 +231,7 @@ function Home() {
           <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Freshly rotated items from the atelier console</p>
         </div>
         
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-5">
           {randomShowcaseProducts.map((p) => (
             <ProductCard key={p.id || p._id} product={p} />
           ))}

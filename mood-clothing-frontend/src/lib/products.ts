@@ -12,11 +12,11 @@ export const SUBCATEGORIES: { slug: SubCategory; label: string }[] = [
   { slug: "t-shirt", label: "T-Shirt" },
   { slug: "joggers", label: "Joggers" },
   { slug: "polo", label: "Polo" },
-  { slug: "shirt", label: "Shirt" },
+  { slug: "polo-gown", label: "Polo Gown" },
   { slug: "tracksuit", label: "Track suites" },
   { slug: "hoodies", label: "Hoodies" },
   { slug: "mesh-trucker-hat", label: "Mesh Trucker Hat" },
-  { slug: "polo gown", label: "Polo Gown" },
+  
 ];
 
 export type Product = {
@@ -47,7 +47,7 @@ const convertToSlug = (text: string): string => {
 const img = (id: string) => `https://images.unsplash.com/${id}?w=900&h=1125&fit=crop&auto=format&q=75`;
 
 export const PRODUCTS: Product[] = [
-  { id: "utility-jacket", name: "Utility Jacket", price: 350, category: "men", sub: "shirt", colors: ["#8b6f47", "#2b2b2b", "#5c4a3a"], images: [img("photo-1591047139829-d91aecb6caea"), img("photo-1516257984-b1b4d707412e")], rating: 4.7, reviewCount: 128, description: "Structured cotton-blend utility jacket with a relaxed drop shoulder and reinforced chest pockets. A refined take on workwear built for daily rotation.", badge: "New" },
+  { id: "utility-jacket", name: "Utility Jacket", price: 350, category: "men", sub: "polo-gown", colors: ["#8b6f47", "#2b2b2b", "#5c4a3a"], images: [img("photo-1591047139829-d91aecb6caea"), img("photo-1516257984-b1b4d707412e")], rating: 4.7, reviewCount: 128, description: "Structured cotton-blend utility jacket with a relaxed drop shoulder and reinforced chest pockets. A refined take on workwear built for daily rotation.", badge: "New" },
   { id: "miracle-shirt", name: "Miracle Air Shirt Jacket", price: 100, category: "men", sub: "shirt", colors: ["#1a1a1a", "#4a5f7a", "#e8ddc0"], images: [img("photo-1602810318383-e386cc2a3ccf"), img("photo-1489987707025-afc232f7ea0f")], rating: 4.5, reviewCount: 96, description: "Featherweight overshirt cut from breathable cotton twill. Wear open over a tee or buttoned up as a lightweight jacket.", badge: "Best Seller" },
   { id: "tailored-rilex", name: "Tailored Rilex Jacket", price: 275, category: "men", sub: "shirt", colors: ["#3a3a3a", "#c7b299", "#5a5a5a", "#1a1a1a"], images: [img("photo-1620799140408-edc6dcb6d633"), img("photo-1552374196-c4e7ffc6e126")], rating: 4.8, reviewCount: 210, description: "Softly tailored blazer in a lightly textured wool blend. Half-lined for movement, with mother-of-pearl buttons." },
   { id: "silhouette-puffer", name: "Silhouette Puffer Jacket", price: 250, category: "women", sub: "hoodies", colors: ["#0a0a0a", "#8b7355"], images: [img("photo-1548126032-079a0fb0099d"), img("photo-1611652022419-a9419f74343d")], rating: 4.9, reviewCount: 341, description: "Signature down puffer with a sculpted shoulder line and matte satin shell. Sub-zero warmth, editorial silhouette.", badge: "Best Seller" },
@@ -67,7 +67,7 @@ export const PRODUCTS: Product[] = [
   { id: "kids-polo", name: "Kids Piqué Polo", price: 45, category: "kids", sub: "polo", colors: ["#ffffff", "#0a0a0a", "#7a8a5a"], images: [img("photo-1519345182560-3f2917c472ef"), img("photo-1596727147705-61a532a659bd")], rating: 4.6, reviewCount: 29, description: "The classic polo, sized for kids in soft pima cotton." },
 ];
 
-export function findProduct(id: string): Product | undefined {
+export function findProduct(id: string): Product | undefined { 
   if (!id) return undefined;
   const cleanId = id.toString();
   

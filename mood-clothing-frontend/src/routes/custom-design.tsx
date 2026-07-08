@@ -22,17 +22,54 @@ function CustomDesign() {
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const addFiles = (list: FileList | null) => {
+  // FIXED: Migrated local storage blob mapping hooks to secure asynchronous Cloudinary pipelines
+  const addFiles = async (list: FileList | null) => {
     if (!user) {
       toast.error("Please sign in or create an account to upload design materials.");
       openLogin();
       return;
     }
-    if (!list) return;
+    if (!list || list.length === 0) return;
     
-    // For local testing preview; in production, you'll route these blobs to a cloud storage service like Cloudinary or S3
-    const next = Array.from(list).slice(0, 6).map((f) => ({ name: f.name, url: URL.createObjectURL(f) }));
-    setFiles((prev) => [...prev, ...next].slice(0, 6));
+    const filesArray = Array.from(list).slice(0, 6 - files.length);
+    if (filesArray.length === 0) {
+      toast.error("You can upload a maximum of 6 attachment files per design brief.");
+      return;
+    }
+
+    toast.info(`Uploading ${filesArray.length} material attachment streams to the cloud...`);
+
+    const CLOUD_NAME = "gam6ajgd"; 
+    const UPLOAD_PRESET = "mood_clothings"; 
+
+    try {
+      const uploadedUrls = await Promise.all(
+        filesArray.map(async (file) => {
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("upload_preset", UPLOAD_PRESET);
+
+          const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error?.message || "Cloud bucket rejected file streams.");
+          }
+
+          const data = await res.json();
+          return { name: file.name, url: data.secure_url }; // Returns permanent secure web link
+        })
+      );
+
+      setFiles((prev) => [...prev, ...uploadedUrls].slice(0, 6));
+      toast.success("Design materials safely secured on cloud infrastructure!");
+    } catch (err: any) {
+      console.error("Atelier upload handshake tracking error:", err);
+      toast.error(err.message || "Failed to host file stream attachments on the cloud.");
+    }
   };
 
   const handleSubmitBrief = async (e: React.FormEvent) => {
@@ -112,7 +149,7 @@ function CustomDesign() {
             <div className="mt-6 grid grid-cols-3 gap-3">
               {files.map((f, i) => (
                 <div key={i} className="group relative aspect-square overflow-hidden bg-secondary">
-                  {/\.(png|jpg|jpeg|gif|webp|avif)$/i.test(f.name) ? (
+                  {/\.(png|jpg|jpeg|gif|webp|avif)$/i.test(f.name) || f.url.startsWith("http") ? (
                     <img src={f.url} alt={f.name} className="h-full w-full object-cover" />
                   ) : (
                     <div className="grid h-full place-items-center text-xs text-muted-foreground"><ImagePlus className="h-6 w-6" /></div>

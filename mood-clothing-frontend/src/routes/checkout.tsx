@@ -42,6 +42,11 @@ function Checkout() {
     };
   }, [isOrdered]);
 
+  // Clean localized currency formatting generator mapping utility hook
+  const formatNaira = (amount: number) => {
+    return "₦" + Number(amount).toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  };
+
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -98,6 +103,7 @@ function Checkout() {
 
       // 3. SUCCESS PIPELINE: SWAP VISUAL STATES & CLEAN STORAGE
       setIsOrdered(true);
+      const tokenSessionSave = localStorage.getItem(ADMIN_KEY); 
       toast.success("Order logged in database successfully!");
       
       localStorage.removeItem("moon clothings-store-v1");
@@ -246,16 +252,17 @@ function Checkout() {
               <button 
                 type="submit" 
                 disabled={loading}
-                className="w-full bg-foreground py-4 text-xs uppercase tracking-widest text-background transition-transform hover:scale-[1.01] disabled:opacity-50 disabled:pointer-events-none"
+                className="w-full bg-foreground py-4 text-xs uppercase tracking-widest text-background transition-transform hover:scale-[1.01] disabled:opacity-50 disabled:pointer-events-none font-mono"
               >
-                {loading ? "Processing Order..." : `Place Order · $${cartTotal}`}
+                {loading ? "Processing Order..." : `Place Order · ${formatNaira(cartTotal)}`}
               </button>
             </div>
           </div>
 
-          <aside className="h-fit border border-hairline p-6">
+          <aside className="h-fit border border-hairline p-6 bg-background rounded-sm">
             <h3 className="text-lg uppercase tracking-widest">Order Summary</h3>
-            <ul className="mt-4 divide-y divide-[color:var(--hairline)]">
+            {/* Embedded specific vertical overflow boundary scrollbar blocks */}
+            <ul className="mt-4 divide-y divide-[color:var(--hairline)] max-h-[360px] overflow-y-auto pr-1">
               {cart.map((item) => {
                 const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
                 const p = allInventory.find(
@@ -268,7 +275,6 @@ function Checkout() {
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm uppercase tracking-widest">{p.name}</div>
                       
-                      {/* FIXED VARIANTS PREVIEW: Displays selected parameters dynamically */}
                       <div className="mt-1 flex flex-wrap gap-x-2 text-[11px] text-muted-foreground">
                         {item.size && <span>Size: {item.size}</span>}
                         {item.color && (
@@ -285,15 +291,15 @@ function Checkout() {
                       
                       <div className="mt-0.5 text-sm text-muted-foreground">Qty {item.qty}</div>
                     </div>
-                    <div className="shrink-0 text-lg tabular-nums">${p.price * item.qty}</div>
+                    <div className="shrink-0 text-lg tabular-nums font-mono">{formatNaira(p.price * item.qty)}</div>
                   </li>
                 );
               })}
             </ul>
-            <div className="mt-6 space-y-2 text-sm">
-              <div className="flex justify-between"><span>Subtotal</span><span className="tabular-nums">${cartTotal}</span></div>
+            <div className="mt-6 space-y-2 text-sm border-t border-hairline pt-4">
+              <div className="flex justify-between"><span>Subtotal</span><span className="tabular-nums font-mono">{formatNaira(cartTotal)}</span></div>
               <div className="flex justify-between text-muted-foreground"><span>Shipping</span><span>Free</span></div>
-              <div className="flex justify-between border-t border-hairline pt-2 font-medium"><span>Total</span><span className="tabular-nums">${cartTotal}</span></div>
+              <div className="flex justify-between border-t border-hairline pt-2 font-medium text-base"><span>Total</span><span className="tabular-nums font-mono">{formatNaira(cartTotal)}</span></div>
             </div>
           </aside>
         </form>

@@ -99,6 +99,26 @@ function ProductPage() {
     return { computedRating: computed, totalReviewsCount: count };
   }, [currentReviews]);
 
+  // FIXED: Filters ALL products to find matching categories (e.g., 'men') and shuffles 5 items randomly
+  const randomizedCategoryProducts = useMemo(() => {
+    if (!product || !product.category) return [];
+    
+    const pool = Array.isArray(liveRegistry) && liveRegistry.length > 0 ? liveRegistry : STATIC_PRODUCTS;
+    
+    // 1. Filter by matching category group string, excluding the item currently open on screen
+    const categoryMatches = pool.filter(
+      (item) => item.category === product.category && item.id !== product.id
+    );
+
+    // Fallback block: If the target category doesn't have enough entries yet, fetch from general pool
+    const finalPool = categoryMatches.length >= 5 
+      ? categoryMatches 
+      : pool.filter((item) => item.id !== product.id);
+
+    // 2. Shuffle item indices randomly and extract exactly 5 slots
+    return [...finalPool].sort(() => 0.6 - Math.random()).slice(0, 6);
+  }, [product, liveRegistry]);
+
   // FIXED EARLY EXIT LOADER: Intercepts component render cycle safely to display rolling spinner icon center-screen
   if (isLoading || !product || product.name === "Mood Clothings" || !product.id) {
     return (
@@ -154,9 +174,7 @@ function ProductPage() {
       />
 
       <div className="mt-6 grid gap-8 md:grid-cols-2 lg:gap-12 items-start">
-        {/* Large Screen Container Sizing Controls */}
         <div className="flex flex-col gap-3">
-          {/* Capped desktop aspect box boundary parameters so images stay fully visible inside viewport */}
           <div className="overflow-hidden bg-secondary rounded-sm max-w-full md:max-h-[580px] flex items-center justify-center">
             <img
               src={product.images[activeImage]}
@@ -165,7 +183,6 @@ function ProductPage() {
               fetchPriority="high"
             />
           </div>
-          {/* Enlarged miniature thumbnails layout format sizing grid */}
           <div className="flex flex-wrap gap-2.5">
             {product.images.map((src, i) => (
               <button
@@ -191,7 +208,6 @@ function ProductPage() {
             <span className="text-lg text-muted-foreground">{computedRating.toFixed(1)} · {totalReviewsCount} reviews</span>
           </div>
           
-          {/* Enhanced Price Presentation Weight Parameters */}
           <div className="mt-5 font-display text-4xl font-semibold text-foreground font-mono">{formatNaira(product.price)}</div>
           <p className="mt-6 text-lg leading-relaxed text-muted-foreground">{product.description}</p>
 
@@ -275,8 +291,8 @@ function ProductPage() {
           </div>
 
           <div className="mt-8 grid grid-cols-3 gap-4 text-lg uppercase tracking-widest text-muted-foreground border-t border-hairline pt-6">
-            <div className="flex flex-col items-start gap-2"><Truck className="h-5 w-5 text-foreground" /> Free shipping over ₦75,000</div>
-            <div className="flex flex-col items-start gap-2"><RefreshCcw className="h-5 w-5 text-foreground" /> 30-day returns</div>
+            <div className="flex flex-col items-start gap-2"><Truck className="h-5 w-5 text-foreground" /> Free shipping over ₦1,500</div>
+            <div className="flex flex-col items-start gap-2"><RefreshCcw className="h-5 w-5 text-foreground" /> 7-days returns</div>
             <div className="flex flex-col items-start gap-2"><ShieldCheck className="h-5 w-5 text-foreground" /> Secure checkout</div>
           </div>
         </div>
@@ -366,8 +382,15 @@ function ProductPage() {
         </div>
       </section>
 
-      {/* Related Grid displaying exactly 5 shuffled products */}
-   
+      {/* Related Grid displaying exactly 5 shuffled products filtered by Category */}
+      <section className="mt-20">
+        <h2 className="mb-6 font-display text-2xl md:text-3xl">You may also like</h2>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-6 md:gap-6">
+          {randomizedCategoryProducts.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
+        </div>
+      </section>
 
       <RecentlyViewed excludeId={product.id} />
     </div>

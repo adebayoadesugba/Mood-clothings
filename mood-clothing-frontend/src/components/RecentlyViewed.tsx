@@ -35,7 +35,7 @@ export function RecentlyViewed({ excludeId }: { excludeId?: string }) {
   if (items.length === 0) return null;
 
   return (
-    <section className="mx-auto max-w-[1440px] px-4 py-16 md:px-8 relative">
+    <section className="mx-auto max-w-[1440px] px-1 py-8 md:px-8 relative">
       {/* Header with Heading & Navigation Buttons */}
       <div className="mb-6 flex items-center justify-between">
         <h2 className="font-display text-2xl md:text-3xl">Recently Viewed</h2>
@@ -68,7 +68,7 @@ export function RecentlyViewed({ excludeId }: { excludeId?: string }) {
         {items.map((p) => (
           <div 
             key={p.id} 
-            className="w-[70%] shrink-0 snap-start sm:w-[42%] md:w-[28%] lg:w-[22%] will-change-transform"
+            className="w-[50%] shrink-0 snap-start sm:w-[42%] md:w-[28%] lg:w-[16%] will-change-transform"
           >
             <ProductCard product={p} />
           </div>

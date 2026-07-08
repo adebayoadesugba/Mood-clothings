@@ -14,6 +14,11 @@ export function CartDrawer() {
     return () => { document.body.style.overflow = ""; };
   }, [cartOpen]);
 
+  // Clean formatting conversion mapping for local currency standards
+  const formatNaira = (amount: number) => {
+    return "₦" + Number(amount).toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  };
+
   const displayCart = cart || [];
 
   return (
@@ -77,13 +82,14 @@ export function CartDrawer() {
                             )}
                           </div>
                         </div>
-                        <div className="shrink-0 text-sm tabular-nums">${p.price * item.qty}</div>
+                        {/* Render localized product pricing vector calculations directly into output element */}
+                        <div className="shrink-0 text-sm tabular-nums font-mono">{formatNaira(p.price * item.qty)}</div>
                       </div>
                       
                       <div className="mt-auto flex items-center justify-between">
                         <div className="flex items-center border border-hairline">
                           <button type="button" className="grid h-8 w-8 place-items-center" onClick={() => setQty(item.id, item.qty - 1)} aria-label="Decrease"><Minus className="h-3 w-3" /></button>
-                          <span className="w-8 text-center text-xs tabular-nums">{item.qty}</span>
+                          <span className="w-8 text-center text-xs tabular-nums font-mono">{item.qty}</span>
                           <button type="button" className="grid h-8 w-8 place-items-center" onClick={() => setQty(item.id, item.qty + 1)} aria-label="Increase"><Plus className="h-3 w-3" /></button>
                         </div>
                         <button type="button" onClick={() => removeFromCart(item.id)} aria-label="Remove" className="text-muted-foreground hover:text-foreground">
@@ -102,7 +108,8 @@ export function CartDrawer() {
           <div className="border-t border-hairline p-5">
             <div className="mb-4 flex items-center justify-between text-sm">
               <span className="uppercase tracking-widest">Subtotal</span>
-              <span className="tabular-nums">${cartTotal}</span>
+              {/* Localized cart total metrics parsing layout pipeline */}
+              <span className="tabular-nums font-mono">{formatNaira(cartTotal)}</span>
             </div>
             <Link
               to="/checkout"
