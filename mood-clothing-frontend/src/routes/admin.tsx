@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Package, ShoppingBag, Users, LogOut, Plus, Trash2, Pencil, ChevronDown, ChevronRight, X, Upload, Palette, Download, Maximize2 } from "lucide-react";
+import { Package, ShoppingBag, Users, LogOut, Plus, Trash2, Pencil, ChevronDown, ChevronRight, X, Upload, Palette, Download, Maximize2, Loader2 } from "lucide-react";
 import { PRODUCTS, CATEGORIES, SUBCATEGORIES, type Product, type Category, type SubCategory } from "@/lib/products";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -17,8 +17,6 @@ export const Route = createFileRoute("/admin")({
 });
 
 const ADMIN_KEY = "moon-clothings-admin-v1";
-const DEMO_EMAIL = "admin@moon-clothings.com";
-const DEMO_PASS = "admin123";
 
 type AdminSession = { email: string; token: string } | null; 
 type Tab = "products" | "orders" | "customers" | "designs";
@@ -28,10 +26,12 @@ type AdminProduct = Product & { _id?: string; tags: string[]; stockSizes: string
 const TAG_OPTIONS = ["New Arrival", "Best Seller", "Out of Stock"];
 const SIZE_OPTIONS = ["S", "M", "L", "XL", "XXL"];
 
+const UPDATED_SUBCATEGORIES = [...SUBCATEGORIES, { slug: "polo-gown", label: "Polo Gown" }];
+
 type Order = {
   id: string;
   _id?: string;
-  customer: { name: string; email: string; phone: string; address: string; city?: string; zip?: string };
+  customer: { name: string; email: string; phone: string; address: string; city?: string; zip?: string; phone2?: string };
   items: { product: string; name: string; image: string; color: string; size: string; qty: number; price: number }[];
   total: number;
   status: "Pending Paid" | "Processing" | "Shipped" | "Delivered" | "Cancelled";
@@ -51,6 +51,10 @@ type UserDesign = {
 };
 
 const STATUS_FLOW: Order["status"][] = ["Pending Paid", "Processing", "Shipped", "Delivered", "Cancelled"];
+
+const formatNaira = (amount: number) => {
+  return "₦" + Number(amount).toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+};
 
 function seedProducts(): AdminProduct[] {
   return PRODUCTS.map((p, i) => ({
@@ -162,10 +166,8 @@ function AdminPage() {
         throw new Error(data.message || "Invalid administrative credentials.");
       }
       
-      // Isolate the user values accurately matching data layout payloads
       const profileData = data.data || data.user || data;
 
-      // FIXED: Validates based on your Mongoose schema string enum "role" definition directly
       if (profileData?.role !== "admin" && data.user?.role !== "admin" && data.data?.role !== "admin") {
         throw new Error("Access denied: This profile is not authorized as an administrative workspace controller.");
       }
@@ -244,7 +246,7 @@ function AdminPage() {
             </select>
           </header>
           
-          <div className="flex-1 overflow-y-auto p-6 md:p-10">
+          <div className="flex-1 overflow-hidden p-6 md:p-10 bg-secondary/5">
             {tab === "products" && <ProductsModule sessionToken={session.token} products={products} setProducts={setProducts} refreshInventory={refreshInventory} />}
             {tab === "orders" && <OrdersModule sessionToken={session.token} orders={orders} setOrders={setOrders} />}
             {tab === "customers" && <CustomersModule sessionToken={session.token} orders={orders} />}
@@ -296,6 +298,7 @@ function emptyProduct(): AdminProduct {
 
 function ProductsModule({ sessionToken, products, setProducts, refreshInventory }: { sessionToken: string; products: AdminProduct[]; setProducts: (p: AdminProduct[]) => void; refreshInventory: () => Promise<void> }) {
   const [editing, setEditing] = useState<AdminProduct | null>(null);
+  const [loading, setLoading] = useState(true);
   const API_BASE_URL = "http://localhost:5000/api/products"; 
 
   const getAuthHeaders = () => {
@@ -308,6 +311,7 @@ function ProductsModule({ sessionToken, products, setProducts, refreshInventory 
   useEffect(() => {
     const fetchLiveProducts = async () => {
       try {
+        setLoading(true);
         const res = await fetch(API_BASE_URL, {
           headers: { "Authorization": getAuthHeaders()["Authorization"] }
         });
@@ -333,6 +337,8 @@ function ProductsModule({ sessionToken, products, setProducts, refreshInventory 
       } catch (err) {
         console.error("Global store failed to sync backend inventory:", err);
         toast.error("Could not sync live catalog data.");
+      } finally {
+        setLoading(false);
       }
     };
     fetchLiveProducts();
@@ -341,7 +347,7 @@ function ProductsModule({ sessionToken, products, setProducts, refreshInventory 
   const save = async (p: AdminProduct) => {
     if (!p.name?.trim()) { toast.error("Product Title is missing!"); return; }
     if (!p.description?.trim()) { toast.error("Product Description Brief is missing!"); return; }
-    if (!p.price || p.price <= 0) { toast.error("Base Price must be greater than $0!"); return; }
+    if (!p.price || p.price <= 0) { toast.error("Base Price must be greater than ₦0!"); return; }
     if (!p.images || p.images.length === 0) { toast.error("At least one Product Image is required!"); return; }
     if (!p.colors || p.colors.length === 0) { toast.error("At least one Color Swatch is required!"); return; }
     if (!p.stockSizes || p.stockSizes.length === 0) { toast.error("At least one Available Size Parameter must be selected!"); return; }
@@ -443,8 +449,17 @@ function ProductsModule({ sessionToken, products, setProducts, refreshInventory 
     }
   };
 
+  if (loading) {
+    return (
+      <div className="h-full w-full flex flex-col items-center justify-center p-12 bg-background border border-hairline">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="mt-2 text-lg text-muted-foreground uppercase tracking-widest font-medium">Synchronizing live item catalog data streams...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-full flex flex-col text-lg">
+    <div className="h-full flex flex-col text-lg overflow-hidden">
       <div className="flex items-center justify-between shrink-0 mb-6">
         <div>
           <h1 className="font-display text-3xl">Products</h1>
@@ -459,6 +474,7 @@ function ProductsModule({ sessionToken, products, setProducts, refreshInventory 
         <table className="w-full text-lg table-auto">
           <thead className="bg-secondary text-left text-lg uppercase tracking-widest text-muted-foreground sticky top-0 z-10 shadow-[0_1px_0_0_rgba(0,0,0,0.05)] bg-secondary">
             <tr>
+              <th className="px-4 py-3 w-16 text-center">#</th>
               <th className="px-4 py-3">Product</th>
               <th className="px-4 py-3">Category</th>
               <th className="px-4 py-3">Price</th>
@@ -467,10 +483,11 @@ function ProductsModule({ sessionToken, products, setProducts, refreshInventory 
             </tr>
           </thead>
           <tbody className="divide-y divide-hairline">
-            {products.map((p) => {
+            {products.map((p, index) => {
               const displayId = p._id || p.id;
               return (
                 <tr key={displayId} className="hover:bg-secondary/20">
+                  <td className="px-4 py-3 font-mono text-center text-muted-foreground">{index + 1}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <img src={p.images[0] || "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=100"} alt={p.name} className="h-14 w-12 object-cover shrink-0" loading="lazy" />
@@ -478,7 +495,7 @@ function ProductsModule({ sessionToken, products, setProducts, refreshInventory 
                     </div>
                   </td>
                   <td className="px-4 py-3 capitalize text-lg">{p.category} · {p.sub}</td>
-                  <td className="px-4 py-3 font-medium">${p.price}</td>
+                  <td className="px-4 py-3 font-medium font-mono">{formatNaira(p.price)}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
                       {p.stockSizes?.map((s) => (
@@ -520,15 +537,47 @@ function ProductForm({ initial, onClose, onSave }: { initial: AdminProduct; onCl
     setP({ ...p, stockSizes: nextSizes });
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
     const filesArray = Array.from(e.target.files);
-    const newImageUrls = filesArray.map((file) => URL.createObjectURL(file));
-    setP((prev) => ({
-      ...prev,
-      images: [...prev.images, ...newImageUrls],
-    }));
-    toast.success(`Loaded ${filesArray.length} product gallery asset resources successfully.`);
+    
+    toast.info(`Uploading ${filesArray.length} asset resources to cloud hosting...`);
+
+    const CLOUD_NAME = "gam6ajgd"; 
+    const UPLOAD_PRESET = "mood_clothings"; 
+
+    try {
+      const uploadedUrls = await Promise.all(
+        filesArray.map(async (file) => {
+          const formData = new FormData(); 
+          formData.append("file", file);
+          formData.append("upload_preset", UPLOAD_PRESET);
+
+          const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error?.message || "Cloud upload rejected");
+          }
+          
+          const data = await res.json();
+          return data.secure_url; 
+        })
+      );
+
+      setP((prev) => ({
+        ...prev,
+        images: [...prev.images, ...uploadedUrls], 
+      }));
+
+      toast.success("Gallery assets safely secured on the cloud!");
+    } catch (err: any) {
+      console.error("Cloud binary deployment error:", err);
+      toast.error(err.message || "Failed to host device file on cloud image clusters.");
+    }
   };
 
   const handleImageUrlAdd = () => {
@@ -541,7 +590,6 @@ function ProductForm({ initial, onClose, onSave }: { initial: AdminProduct; onCl
       ...prev,
       images: [...prev.images, imageUrlInput.trim()],
     }));
-    imageUrlInput;
     setImageUrlInput("");
     toast.success("Web graphic canvas link appended to item array.");
   };
@@ -555,58 +603,57 @@ function ProductForm({ initial, onClose, onSave }: { initial: AdminProduct; onCl
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-foreground/40 p-4 text-lg" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="mx-auto mt-8 max-w-2xl bg-background p-8 border border-hairline shadow-xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-start justify-between">
-          <h2 className="font-display text-2xl">{initial._id || initial.id ? "Edit Product" : "New Product"}</h2>
-          <button onClick={onClose} aria-label="Close"><X className="h-6 w-6" /></button>
+      <div onClick={(e) => e.stopPropagation()} className="mx-auto mt-4 max-w-4xl bg-background p-10 border border-hairline shadow-2xl max-h-[95vh] overflow-y-auto rounded-lg">
+        <div className="flex items-start justify-between border-b border-hairline pb-4 mb-6">
+          <h2 className="font-display text-3xl tracking-wide font-semibold">{initial._id || initial.id ? "Edit Product Context" : "Register New Product Asset"}</h2>
+          <button onClick={onClose} aria-label="Close" className="hover:scale-105 transition-transform"><X className="h-7 w-6" /></button>
         </div>
 
-        <div className="mt-6 grid grid-cols-2 gap-4">
-          <Field label="Product Title" className="col-span-2">
+        <div className="space-y-6">
+          <Field label="Product Title">
             <input 
               value={p.name} 
               onChange={(e) => setP({ ...p, name: e.target.value })} 
-              className="w-full border-2 border-foreground/30 rounded px-3 py-2 bg-background focus:border-foreground outline-none text-lg text-foreground mt-1 font-medium"
+              className="w-full border-2 border-foreground/30 rounded px-4 py-3 bg-background focus:border-foreground outline-none text-lg text-foreground mt-2 font-medium"
               placeholder="Enter product title here..." 
             />
           </Field>
           
-          <Field label="Product Description Brief" className="col-span-2">
+          <Field label="Product Description Brief">
             <textarea 
               value={p.description} 
               onChange={(e) => setP({ ...p, description: e.target.value })} 
-              rows={3} 
+              rows={4} 
               placeholder="Describe the fabric silhouette details, tailoring, and specifications details..."
-              className="mt-1 w-full border-2 border-foreground/30 rounded px-3 py-2 bg-background text-lg outline-none focus:border-foreground resize-none text-foreground placeholder:text-muted-foreground" 
+              className="mt-2 w-full border-2 border-foreground/30 rounded px-4 py-3 bg-background text-lg outline-none focus:border-foreground resize-none text-foreground placeholder:text-muted-foreground leading-relaxed" 
             />
           </Field>
 
-          <Field label="Base Price ($)">
-            <input type="number" min={0} value={p.price} onChange={(e) => setP({ ...p, price: Number(e.target.value) })} className="w-full border-2 border-foreground/30 rounded px-3 py-2 bg-background text-lg outline-none focus:border-foreground mt-1" />
-          </Field>
-          <Field label="Category">
-            <select value={p.category} onChange={(e) => setP({ ...p, category: e.target.value as Category })} className="w-full border-2 border-foreground/30 rounded px-3 py-2 bg-background text-lg outline-none focus:border-foreground mt-1 h-[46px]">
-              {CATEGORIES.map((c) => <option key={c.slug} value={c.slug}>{c.label}</option>)}
-              <option value="unisex">Unisex</option>
-            </select>
-          </Field>
-          <Field label="Subcategory" className="col-span-2 md:col-span-1">
-            <select value={p.sub} onChange={(e) => setP({ ...p, sub: e.target.value as SubCategory })} className="w-full border-2 border-foreground/30 rounded px-3 py-2 bg-background text-lg outline-none focus:border-foreground mt-1 h-[46px]">
-              {SUBCATEGORIES.map((s) => <option key={s.slug} value={s.slug}>{s.label}</option>)}
-            </select>
-          </Field>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Field label="Base Price (₦)">
+              <input type="number" min={0} value={p.price} onChange={(e) => setP({ ...p, price: Number(e.target.value) })} className="w-full border-2 border-foreground/30 rounded px-4 py-2.5 bg-background text-lg outline-none focus:border-foreground mt-2 font-mono font-semibold" />
+            </Field>
+            <Field label="Category">
+              <select value={p.category} onChange={(e) => setP({ ...p, category: e.target.value as Category })} className="w-full border-2 border-foreground/30 rounded px-4 py-2.5 bg-background text-lg outline-none focus:border-foreground mt-2 h-[52px]">
+                {CATEGORIES.filter(c => c.slug !== "unisex").map((c) => <option key={c.slug} value={c.slug}>{c.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Subcategory">
+              <select value={p.sub} onChange={(e) => setP({ ...p, sub: e.target.value as SubCategory })} className="w-full border-2 border-foreground/30 rounded px-4 py-2.5 bg-background text-lg outline-none focus:border-foreground mt-2 h-[52px]">
+                {UPDATED_SUBCATEGORIES.map((s) => <option key={s.slug} value={s.slug}>{s.label}</option>)}
+              </select>
+            </Field>
+          </div>
         </div>
 
-        <div className="mt-6">
-          <p className="text-lg uppercase tracking-widest text-muted-foreground mb-2">Product Image Gallery Manager</p>
-          
+        <div className="mt-8 pt-4 border-t border-hairline">
+          <p className="text-lg uppercase tracking-widest text-muted-foreground font-semibold mb-3">Product Image Gallery Manager</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="flex flex-col items-center justify-center border-2 border-dashed border-foreground/30 p-6 bg-secondary/20 cursor-pointer hover:bg-secondary/40 transition-colors h-36">
               <Upload className="h-6 w-6 text-muted-foreground mb-2" />
               <span className="text-lg text-muted-foreground font-medium uppercase tracking-wider">Upload Device File</span>
               <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} />
             </label>
-            
             <div className="flex flex-col justify-center border-2 border-dashed border-foreground/30 p-4 bg-secondary/20 h-36">
               <label className="text-lg text-muted-foreground font-medium uppercase tracking-wider mb-2 block">Or Add Image via URL Link</label>
               <div className="flex gap-2">
@@ -627,62 +674,51 @@ function ProductForm({ initial, onClose, onSave }: { initial: AdminProduct; onCl
               {p.images.map((imgSrc, idx) => (
                 <div key={idx} className="relative aspect-[4/5] bg-secondary border border-hairline group">
                   <img src={imgSrc} alt="" className="w-full h-full object-cover" />
-                  
                   {idx === 0 ? (
-                    <span className="absolute top-1 left-1 bg-foreground text-background text-lg tracking-widest uppercase px-2 py-0.5 font-bold shadow-md">
-                      Main Image
-                    </span>
+                    <span className="absolute top-1 left-1 bg-foreground text-background text-sm tracking-widest uppercase px-2 py-0.5 font-bold shadow-md">Main Image</span>
                   ) : (
-                    <span className="absolute top-1 left-1 bg-background/80 text-foreground text-lg tracking-widest uppercase px-2 py-0.5 font-normal opacity-0 group-hover:opacity-100 transition-opacity">
-                      Gallery ({idx})
-                    </span>
+                    <span className="absolute top-1 left-1 bg-background/80 text-foreground text-sm tracking-widest uppercase px-2 py-0.5 font-normal opacity-0 group-hover:opacity-100 transition-opacity">Gallery ({idx})</span>
                   )}
-                  
-                  <button 
-                    type="button" 
-                    onClick={() => removeImage(idx)} 
-                    className="absolute top-1 right-1 bg-background border border-hairline p-1 rounded-full shadow-md text-destructive hover:scale-105 transition-transform"
-                    aria-label="Remove Image"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <button type="button" onClick={() => removeImage(idx)} className="absolute top-1 right-1 bg-background border border-hairline p-1 rounded-full shadow-md text-destructive hover:scale-105 transition-transform" aria-label="Remove Image"><Trash2 className="h-4 w-4" /></button>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="mt-6">
-          <p className="text-lg uppercase tracking-widest text-muted-foreground">Tags</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {TAG_OPTIONS.map((t) => {
-              const on = p.tags.includes(t);
-              return (
-                <button type="button" key={t} onClick={() => toggleTag(t)} className={`border-2 px-3 py-1.5 text-lg ${on ? "border-foreground bg-foreground text-background" : "border-foreground/30 hover:bg-secondary"}`}>{t}</button>
-              );
-            })}
+        <div className="mt-6 pt-4 border-t border-hairline grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <p className="text-lg uppercase tracking-widest text-muted-foreground font-semibold mb-2">Tags</p>
+            <div className="flex flex-wrap gap-2">
+              {TAG_OPTIONS.map((t) => {
+                const on = p.tags.includes(t);
+                return (
+                  <button type="button" key={t} onClick={() => toggleTag(t)} className={`border-2 px-3 py-1.5 text-lg transition-colors ${on ? "border-foreground bg-foreground text-background" : "border-foreground/30 hover:bg-secondary"}`}>{t}</button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-lg uppercase tracking-widest text-muted-foreground font-semibold mb-2">Color Swatches</p>
+            <div className="flex items-center gap-2">
+              <input type="color" value={colorInput} onChange={(e) => setColorInput(e.target.value)} className="h-11 w-14 border-2 border-foreground/30 rounded bg-background shrink-0" />
+              <input value={colorInput} onChange={(e) => setColorInput(e.target.value)} className="w-full border-2 border-foreground/30 rounded px-3 py-2 bg-background text-lg outline-none focus:border-foreground flex-1 font-mono" />
+              <button type="button" onClick={addColor} className="border-2 border-foreground px-4 py-2 text-lg uppercase tracking-widest font-semibold hover:bg-foreground hover:text-background transition-colors">Add</button>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 max-h-24 overflow-y-auto">
+              {p.colors?.map((c) => (
+                <button type="button" key={c} onClick={() => removeColor(c)} title={`Remove ${c}`} className="flex items-center gap-1 border border-hairline p-1 text-lg bg-background">
+                  <span className="inline-block h-6 w-6" style={{ background: c }} />
+                  <span className="px-1 font-mono text-sm">{c}</span><X className="h-4 w-4" />
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div className="mt-6">
-          <p className="text-lg uppercase tracking-widest text-muted-foreground">Color Swatches</p>
-          <div className="mt-2 flex items-center gap-2">
-            <input type="color" value={colorInput} onChange={(e) => setColorInput(e.target.value)} className="h-11 w-14 border-2 border-foreground/30 rounded bg-background" />
-            <input value={colorInput} onChange={(e) => setColorInput(e.target.value)} className="w-full border-2 border-foreground/30 rounded px-3 py-2 bg-background text-lg outline-none focus:border-foreground flex-1" />
-            <button type="button" onClick={addColor} className="border-2 border-foreground px-4 py-2 text-lg uppercase tracking-widest font-semibold hover:bg-foreground hover:text-background">Add</button>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {p.colors?.map((c) => (
-              <button type="button" key={c} onClick={() => removeColor(c)} title={`Remove ${c}`} className="flex items-center gap-1 border border-hairline p-1 text-lg">
-                <span className="inline-block h-6 w-6" style={{ background: c }} />
-                <span className="px-1">{c}</span><X className="h-4 w-4" />
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <p className="text-lg uppercase tracking-widest text-muted-foreground mb-2">Available Size Parameters Matrix Selection</p>
+        <div className="mt-6 pt-4 border-t border-hairline">
+          <p className="text-lg uppercase tracking-widest text-muted-foreground font-semibold mb-3">Available Size Parameters Matrix Selection</p>
           <div className="flex gap-3">
             {SIZE_OPTIONS.map((sizeOption) => {
               const isChecked = p.stockSizes?.includes(sizeOption);
@@ -692,9 +728,7 @@ function ProductForm({ initial, onClose, onSave }: { initial: AdminProduct; onCl
                   key={sizeOption}
                   onClick={() => toggleSizeSelection(sizeOption)}
                   className={`h-12 w-16 border-2 text-lg transition-all font-bold flex items-center justify-center ${
-                    isChecked 
-                      ? "border-foreground bg-foreground text-background scale-[1.03]" 
-                      : "border-foreground/30 bg-transparent hover:border-foreground text-muted-foreground"
+                    isChecked ? "border-foreground bg-foreground text-background scale-[1.03]" : "border-foreground/30 bg-transparent hover:border-foreground text-muted-foreground"
                   }`}
                 >
                   {sizeOption}
@@ -704,15 +738,16 @@ function ProductForm({ initial, onClose, onSave }: { initial: AdminProduct; onCl
           </div>
         </div>
 
-        <div className="mt-8 flex justify-end gap-2 shrink-0">
-          <button type="button" onClick={onClose} className="border-2 border-foreground/30 px-5 py-2.5 text-lg uppercase tracking-widest hover:bg-secondary">Cancel</button>
-          <button type="button" onClick={() => onSave(p)} className="bg-foreground px-5 py-2.5 text-lg uppercase tracking-widest text-background font-semibold">Save</button>
+        <div className="mt-8 pt-4 border-t border-hairline flex justify-end gap-3">
+          <button type="button" onClick={onClose} className="border-2 border-foreground/30 px-6 py-3 text-lg uppercase tracking-widest hover:bg-secondary transition-colors">Cancel</button>
+          <button type="button" onClick={() => onSave(p)} className="bg-foreground px-6 py-3 text-lg uppercase tracking-widest text-background font-semibold hover:opacity-90 transition-opacity">Save Asset</button>
         </div>
       </div>
     </div>
   );
 }
 
+// FIXED COMPONENT: Restored the Field structural layout element
 function Field({ label, className, children }: { label: string; className?: string; children: React.ReactNode }) {
   return (
     <div className={className}>
@@ -725,6 +760,7 @@ function Field({ label, className, children }: { label: string; className?: stri
 function OrdersModule({ sessionToken, orders, setOrders }: { sessionToken: string; orders: Order[]; setOrders: (o: Order[]) => void }) {
   const [tab, setTab] = useState<"all" | "pending" | "settled">("all");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const API_ORDERS_URL = "http://localhost:5000/api/orders";
 
   const getHeaders = () => ({
@@ -735,6 +771,7 @@ function OrdersModule({ sessionToken, orders, setOrders }: { sessionToken: strin
   useEffect(() => {
     const fetchLiveOrders = async () => {
       try {
+        setLoading(true);
         const res = await fetch(API_ORDERS_URL, { headers: { "Authorization": `Bearer ${sessionToken}` } });
         if (!res.ok) throw new Error("Order parameters validation error");
         const json = await res.json();
@@ -748,6 +785,8 @@ function OrdersModule({ sessionToken, orders, setOrders }: { sessionToken: strin
         if (standardized.length > 0) setOrders(standardized);
       } catch (err) {
         console.error("Failed pulling logs from backend MongoDB databases cluster:", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchLiveOrders();
@@ -776,8 +815,17 @@ function OrdersModule({ sessionToken, orders, setOrders }: { sessionToken: strin
     }
   };
 
+  if (loading) {
+    return (
+      <div className="h-full w-full flex flex-col items-center justify-center p-12 bg-background border border-hairline">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="mt-2 text-lg text-muted-foreground uppercase tracking-widest font-medium">Fetching secure fulfillment data routes...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-full flex flex-col text-lg">
+    <div className="h-full flex flex-col text-lg overflow-hidden">
       <div className="shrink-0">
         <h1 className="font-display text-3xl">Orders</h1>
         <p className="mt-1 text-lg text-muted-foreground">{orders.length} total.</p>
@@ -793,16 +841,17 @@ function OrdersModule({ sessionToken, orders, setOrders }: { sessionToken: strin
       </div>
 
       <div className="flex-1 overflow-y-auto mt-4 border border-hairline max-h-[calc(100vh-250px)] divide-y divide-hairline bg-background">
-        {filtered.map((o) => {
+        {filtered.map((o, index) => {
           const open = openId === o.id;
           return (
             <div key={o.id} className="border-hairline">
-              <button onClick={() => setOpenId(open ? null : o.id)} className="grid w-full grid-cols-6 items-center gap-4 px-4 py-4 text-left text-lg hover:bg-secondary/30">
+              <button onClick={() => setOpenId(open ? null : o.id)} className="grid w-full grid-cols-7 items-center gap-4 px-4 py-4 text-left text-lg hover:bg-secondary/30">
+                <span className="font-mono text-center text-muted-foreground w-8">{index + 1}</span>
                 {open ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
                 <span className="font-medium tracking-wide truncate">{o.id}</span>
                 <span className="truncate">{o.customer.name}</span>
                 <span className="text-muted-foreground text-lg font-mono">{o.createdAt}</span>
-                <span className="font-medium font-mono">${o.total}</span>
+                <span className="font-medium font-mono">{formatNaira(o.total)}</span>
                 <span className={`justify-self-end text-lg px-2 py-0.5 uppercase tracking-widest font-medium border ${o.status === "Cancelled" ? "border-destructive/40 text-destructive bg-destructive/5" : "border-hairline bg-secondary"}`}>{o.status}</span>
               </button>
               {open && (
@@ -823,16 +872,10 @@ function OrdersModule({ sessionToken, orders, setOrders }: { sessionToken: strin
                         {STATUS_FLOW.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
-                    <div className="mt-4">
-                      <label className="text-lg uppercase tracking-widest text-muted-foreground font-medium">Tracking Reference Parameter</label>
-                      <input value={o.tracking || ""} onChange={(e) => update(o.id, { tracking: e.target.value })}
-                        placeholder="e.g. TRK123456"
-                        className="mt-1 w-full border-2 border-foreground/30 rounded px-3 py-2 bg-background text-lg outline-none focus:border-foreground" />
-                    </div>
                   </div>
                   <div>
                     <p className="text-lg uppercase tracking-widest text-muted-foreground font-medium">Itemization Grid Breakdown</p>
-                    <div className="mt-2 space-y-3">
+                    <div className="mt-2 space-y-3 max-h-96 overflow-y-auto pr-1">
                       {o.items.map((it, i) => (
                         <div key={i} className="flex gap-4 border border-hairline bg-background p-4">
                           <img src={it.image} alt={it.name} className="h-28 w-22 object-cover shrink-0 border border-hairline" loading="lazy" />
@@ -843,15 +886,11 @@ function OrdersModule({ sessionToken, orders, setOrders }: { sessionToken: strin
                                 <span className="text-lg text-muted-foreground flex items-center gap-1">
                                   Swatch: <span className="inline-block h-4 w-4 border border-hairline rounded-full" style={{ background: it.color }} />
                                 </span>
-                                <span className="font-bold text-foreground bg-secondary px-2 py-0.5 border border-hairline text-lg">
-                                  Size: {it.size}
-                                </span>
-                                <span className="font-semibold text-foreground font-mono">
-                                  Qty: {it.qty}
-                                </span>
+                                <span className="font-bold text-foreground bg-secondary px-2 py-0.5 border border-hairline text-lg">Size: {it.size}</span>
+                                <span className="font-semibold text-foreground font-mono">Qty: {it.qty}</span>
                               </div>
                             </div>
-                            <p className="font-mono text-lg font-medium border-t border-hairline/50 pt-1.5 mt-2">${it.price * it.qty}</p>
+                            <p className="font-mono text-lg font-medium border-t border-hairline/50 pt-1.5 mt-2">{formatNaira(it.price * it.qty)}</p>
                           </div>
                         </div>
                       ))}
@@ -868,6 +907,15 @@ function OrdersModule({ sessionToken, orders, setOrders }: { sessionToken: strin
 }
 
 function CustomersModule({ orders }: { orders: Order[] }) {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (orders.length >= 0) {
+      const t = setTimeout(() => setLoading(false), 600);
+      return () => clearTimeout(t);
+    }
+  }, [orders]);
+
   const map = new Map<string, { name: string; email: string; phone: string; orders: number; spent: number }>();
   for (const o of orders) {
     const c = map.get(o.customer.email) || { name: o.customer.name, email: o.customer.email, phone: o.customer.phone, orders: 0, spent: 0 };
@@ -876,8 +924,18 @@ function CustomersModule({ orders }: { orders: Order[] }) {
     map.set(o.customer.email, c);
   }
   const list = Array.from(map.values());
+
+  if (loading) {
+    return (
+      <div className="h-full w-full flex flex-col items-center justify-center p-12 bg-background border border-hairline">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="mt-2 text-lg text-muted-foreground uppercase tracking-widest font-medium">Aggregating live customer ledger information...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-full flex flex-col text-lg">
+    <div className="h-full flex flex-col text-lg overflow-hidden">
       <div className="shrink-0 mb-6">
         <h1 className="font-display text-3xl">Customers</h1>
         <p className="mt-1 text-lg text-muted-foreground">{list.length} customers on file.</p>
@@ -887,21 +945,23 @@ function CustomersModule({ orders }: { orders: Order[] }) {
         <table className="w-full text-lg table-auto">
           <thead className="bg-secondary text-left text-lg uppercase tracking-widest text-muted-foreground sticky top-0 z-10 shadow-[0_1px_0_0_rgba(0,0,0,0.05)] bg-secondary">
             <tr>
+              <th className="px-4 py-3 w-16 text-center">#</th>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Email</th>
               <th className="px-4 py-3">Phone</th>
-              <th className="px-4 py-3">Orders</th>
-              <th className="px-4 py-3">Total Spent</th>
+              <th className="px-4 py-3">Orders Passed</th>
+              <th className="px-4 py-3">Total Spent Matrix</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-hairline">
-            {list.map((c) => (
+            {list.map((c, index) => (
               <tr key={c.email} className="hover:bg-secondary/20">
+                <td className="px-4 py-3 font-mono text-center text-muted-foreground">{index + 1}</td>
                 <td className="px-4 py-3 font-medium text-lg">{c.name}</td>
-                <td className="px-4 py-3 text-lg text-muted-foreground">{c.email}</td>
-                <td className="px-4 py-3 text-lg tracking-wide">{c.phone}</td>
-                <td className="px-4 py-3 font-mono">{c.orders}</td>
-                <td className="px-4 py-3 font-medium font-mono text-foreground">${c.spent.toLocaleString()}</td>
+                <td className="px-4 py-3 text-lg text-muted-foreground font-mono">{c.email}</td>
+                <td className="px-4 py-3 text-lg tracking-wide font-mono">{c.phone}</td>
+                <td className="px-4 py-3 font-mono text-center">{c.orders}</td>
+                <td className="px-4 py-3 font-medium font-mono text-foreground">{formatNaira(c.spent)}</td>
               </tr>
             ))}
           </tbody>
@@ -914,11 +974,13 @@ function CustomersModule({ orders }: { orders: Order[] }) {
 function DesignsModule({ sessionToken, designs, setDesigns }: { sessionToken: string; designs: UserDesign[]; setDesigns: (d: UserDesign[]) => void }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const API_DESIGNS_URL = "http://localhost:5000/api/custom-designs";
 
   useEffect(() => {
     const fetchLiveDesigns = async () => {
       try {
+        setLoading(true);
         const res = await fetch(API_DESIGNS_URL, { headers: { "Authorization": `Bearer ${sessionToken}` } });
         if (!res.ok) throw new Error("Designs loading network check rejected.");
         const json = await res.json();
@@ -937,6 +999,8 @@ function DesignsModule({ sessionToken, designs, setDesigns }: { sessionToken: st
         if (standardized.length > 0) setDesigns(standardized);
       } catch (err) {
         console.error("Failed pulling logged Atelier briefs from MongoDB:", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchLiveDesigns();
@@ -987,22 +1051,32 @@ function DesignsModule({ sessionToken, designs, setDesigns }: { sessionToken: st
     toast.success("Downloading full resolution project canvas asset");
   };
 
+  if (loading) {
+    return (
+      <div className="h-full w-full flex flex-col items-center justify-center p-12 bg-background border border-hairline">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="mt-2 text-lg text-muted-foreground uppercase tracking-widest font-medium">Syncing live atelier custom suite submissions...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-full flex flex-col text-lg">
+    <div className="h-full flex flex-col text-lg overflow-hidden">
       <div className="shrink-0 mb-6">
         <h1 className="font-display text-3xl">User Designs</h1>
         <p className="mt-1 text-lg text-muted-foreground">{designs.length} submissions from the Atelier Custom suite.</p>
       </div>
 
       <div className="flex-1 overflow-y-auto border border-hairline divide-y divide-hairline bg-background max-h-[calc(100vh-220px)]">
-        {designs.map((d) => {
+        {designs.map((d, index) => {
           const open = openId === d.id;
           return (
             <div key={d.id} className="border-hairline">
               <div 
                 onClick={() => setOpenId(open ? null : d.id)} 
-                className="grid w-full grid-cols-5 items-center gap-4 px-4 py-4 text-left text-lg hover:bg-secondary/30 cursor-pointer"
+                className="grid w-full grid-cols-6 items-center gap-4 px-4 py-4 text-left text-lg hover:bg-secondary/30 cursor-pointer"
               >
+                <span className="font-mono text-center text-muted-foreground w-8">{index + 1}</span>
                 <div className="flex items-center gap-2">
                   {open ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
                   <span className="font-medium tracking-wide truncate">{d.id}</span>

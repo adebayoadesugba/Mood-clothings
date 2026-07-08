@@ -1,5 +1,5 @@
 export type Category = "men" | "women" | "kids";
-export type SubCategory = "jean" | "t-shirt" | "joggers" | "polo" | "shirt" | "hoodies" | "tracksuit" | "mesh-trucker-hat";
+export type SubCategory = "jean" | "t-shirt" | "joggers" | "polo" | "shirt" | "hoodies" | "tracksuit" | "mesh-trucker-hat" | "polo gown";
 
 export const CATEGORIES: { slug: Category; label: string }[] = [
   { slug: "men", label: "Men" },
@@ -16,6 +16,7 @@ export const SUBCATEGORIES: { slug: SubCategory; label: string }[] = [
   { slug: "tracksuit", label: "Track suites" },
   { slug: "hoodies", label: "Hoodies" },
   { slug: "mesh-trucker-hat", label: "Mesh Trucker Hat" },
+  { slug: "polo gown", label: "Polo Gown" },
 ];
 
 export type Product = {

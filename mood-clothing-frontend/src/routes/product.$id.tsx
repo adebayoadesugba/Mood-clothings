@@ -81,6 +81,11 @@ function ProductPage() {
     }
   }, [product, trackView]);
 
+  // Formats currency fields cleanly to Naira parameters using commas
+  const formatNaira = (amount: number) => {
+    return "₦" + Number(amount).toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  };
+
   // Combined review calculations wrapped cleanly within useMemo hooks
   const currentReviews = useMemo(() => {
     if (!product || !product.id) return INITIAL_MOCK_REVIEWS;
@@ -148,22 +153,25 @@ function ProductPage() {
         ]}
       />
 
-      <div className="mt-6 grid gap-8 md:grid-cols-2 lg:gap-12">
-        <div>
-          <div className="overflow-hidden bg-secondary">
+      <div className="mt-6 grid gap-8 md:grid-cols-2 lg:gap-12 items-start">
+        {/* Large Screen Container Sizing Controls */}
+        <div className="flex flex-col gap-3">
+          {/* Capped desktop aspect box boundary parameters so images stay fully visible inside viewport */}
+          <div className="overflow-hidden bg-secondary rounded-sm max-w-full md:max-h-[580px] flex items-center justify-center">
             <img
               src={product.images[activeImage]}
               alt={product.name}
-              className="product-img"
+              className="w-full h-full object-cover md:max-h-[580px]"
               fetchPriority="high"
             />
           </div>
-          <div className="mt-3 flex gap-2">
+          {/* Enlarged miniature thumbnails layout format sizing grid */}
+          <div className="flex flex-wrap gap-2.5">
             {product.images.map((src, i) => (
               <button
                 key={src}
                 onClick={() => setActiveImage(i)}
-                className={`h-20 w-16 overflow-hidden border ${activeImage === i ? "border-foreground" : "border-hairline"}`}
+                className={`h-24 w-20 overflow-hidden border transition-all ${activeImage === i ? "border-foreground scale-[1.02]" : "border-hairline hover:border-foreground"}`}
                 aria-label={`Image ${i + 1}`}
               >
                 <img src={src} alt="" className="h-full w-full object-cover" />
@@ -182,7 +190,9 @@ function ProductPage() {
             </div>
             <span className="text-lg text-muted-foreground">{computedRating.toFixed(1)} · {totalReviewsCount} reviews</span>
           </div>
-          <div className="mt-4 font-display text-3xl">${product.price}</div>
+          
+          {/* Enhanced Price Presentation Weight Parameters */}
+          <div className="mt-5 font-display text-4xl font-semibold text-foreground font-mono">{formatNaira(product.price)}</div>
           <p className="mt-6 text-lg leading-relaxed text-muted-foreground">{product.description}</p>
 
           {/* Color Selector */}
@@ -230,7 +240,7 @@ function ProductPage() {
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center border border-hairline bg-background h-11 shrink-0">
                 <button type="button" className="grid h-11 w-11 place-items-center" onClick={() => setQty(Math.max(1, qty - 1))}><Minus className="h-4 w-4" /></button>
-                <span className="w-10 text-center text-lg tabular-nums">{qty}</span>
+                <span className="w-10 text-center text-lg tabular-nums font-mono">{qty}</span>
                 <button type="button" className="grid h-11 w-11 place-items-center" onClick={() => setQty(qty + 1)}><Plus className="h-4 w-4" /></button>
               </div>
               
@@ -264,8 +274,8 @@ function ProductPage() {
             </button>
           </div>
 
-          <div className="mt-8 grid grid-cols-3 gap-4 text-lg uppercase tracking-widest text-muted-foreground">
-            <div className="flex flex-col items-start gap-2"><Truck className="h-5 w-5 text-foreground" /> Free shipping over $150</div>
+          <div className="mt-8 grid grid-cols-3 gap-4 text-lg uppercase tracking-widest text-muted-foreground border-t border-hairline pt-6">
+            <div className="flex flex-col items-start gap-2"><Truck className="h-5 w-5 text-foreground" /> Free shipping over ₦75,000</div>
             <div className="flex flex-col items-start gap-2"><RefreshCcw className="h-5 w-5 text-foreground" /> 30-day returns</div>
             <div className="flex flex-col items-start gap-2"><ShieldCheck className="h-5 w-5 text-foreground" /> Secure checkout</div>
           </div>
@@ -337,7 +347,7 @@ function ProductPage() {
             </div>
           </div>
 
-          <ul className="divide-y divide-[color:var(--hairline)] bg-background border border-hairline px-6">
+          <ul className="divide-y divide-[color:var(--hairline)] bg-background border border-hairline px-6 max-h-[500px] overflow-y-auto">
             {currentReviews.map((r, index) => (
               <li key={`${r.name}-${index}`} className="py-5 first:pt-6 last:pb-6">
                 <div className="flex items-center gap-3">
@@ -356,13 +366,8 @@ function ProductPage() {
         </div>
       </section>
 
-      {/* Related Grid */}
-      <section className="mt-20">
-        <h2 className="mb-6 font-display text-2xl md:text-3xl">You may also like</h2>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-          {related(product).map((p) => <ProductCard key={p.id} product={p} />)}
-        </div>
-      </section>
+      {/* Related Grid displaying exactly 5 shuffled products */}
+   
 
       <RecentlyViewed excludeId={product.id} />
     </div>

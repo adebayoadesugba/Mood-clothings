@@ -24,7 +24,7 @@ const cleanParamSlug = (text: string): string => {
 
 export function Breadcrumbs({ items }: { items: Crumb[] }) {
   return (
-    <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-lg uppercase tracking-widest text-muted-foreground mb-4">
+    <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground mb-4">
       {items.map((c, i) => {
         const last = i === items.length - 1;
         

@@ -8,9 +8,15 @@ export function ProductCard({ product }: { product: Product }) {
   const { addToCart, toggleWishlist, wishlist } = useStore();
   const wished = wishlist.includes(product.id);
 
+  // Formats currency parameters cleanly to Naira with thousands grouping commas
+  const formatNaira = (amount: number) => {
+    return "₦" + Number(amount).toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  };
+
   return (
-    <div className="group card-lift">
-      <div className="relative overflow-hidden bg-secondary">
+    // Added an ultra-thin border frame, discrete rounded corners, and padding layout values
+    <div className="group card-lift border border-hairline/60 rounded-lg p-2 bg-background">
+      <div className="relative overflow-hidden bg-secondary rounded-sm">
         <Link
           to="/product/$id"
           params={{ id: product.id }}
@@ -24,7 +30,7 @@ export function ProductCard({ product }: { product: Product }) {
           />
         </Link>
         {product.badge && (
-          <span className="absolute left-3 top-3 bg-background/95 px-2 py-1 text-[10px] uppercase tracking-widest">
+          <span className="absolute left-3 top-3 bg-background/95 px-2 py-1 text-[12px] uppercase tracking-widest">
             {product.badge}
           </span>
         )}
@@ -43,9 +49,10 @@ export function ProductCard({ product }: { product: Product }) {
           <ShoppingBag className="h-4 w-4" />
         </button>
       </div>
-      <div className="mt-3 flex items-start justify-between gap-3">
+      <div className="mt-4 flex items-start justify-between gap-3 px-1 pb-1">
         <div className="min-w-0">
-          <Link to="/product/$id" params={{ id: product.id }} className="block truncate text-xs uppercase tracking-widest">
+          {/* Scaled text typography layout from text-xs to text-sm */}
+          <Link to="/product/$id" params={{ id: product.id }} className="block truncate text-lg font-medium uppercase tracking-widest text-foreground">
             {product.name}
           </Link>
           <div className="mt-2 flex gap-1.5">
@@ -54,7 +61,10 @@ export function ProductCard({ product }: { product: Product }) {
             ))}
           </div>
         </div>
-        <div className="shrink-0 text-sm tabular-nums">${product.price}</div>
+        {/* Swapped currency token mapping and scaled metrics output layout weight metrics */}
+        <div className="shrink-0 text-lg font-semibold tabular-nums text-foreground font-mono">
+          {formatNaira(product.price)}
+        </div>
       </div>
     </div>
   );

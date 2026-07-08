@@ -37,7 +37,7 @@ function Home() {
     }
     
     // ENFORCES THE MAXIMUM LIMIT OF 12 ITEMS ONLY
-    return list.slice(0, 12);
+    return list.slice(0, 15);
   }, [filter, combinedProducts]);
 
   const scroll = (direction: "left" | "right") => {
@@ -136,7 +136,7 @@ function Home() {
         </div>
         
         {/* Dynamic unified grid layout handles sorting and layouts cleanly */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-5">
           {featured.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
 
