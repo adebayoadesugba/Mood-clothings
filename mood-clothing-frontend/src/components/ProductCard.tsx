@@ -30,7 +30,7 @@ export function ProductCard({ product }: { product: Product }) {
           />
         </Link>
         {product.badge && (
-          <span className="absolute left-3 top-3 bg-background/95 px-2 py-1 text-[12px] uppercase tracking-widest">
+          <span className="absolute left-3 top-3 bg-gray-200 px-2 py-1 text-[12px] uppercase tracking-widest">
             {product.badge}
           </span>
         )}
@@ -52,7 +52,7 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="mt-4 flex items-start justify-between gap-3 px-1 pb-1">
         <div className="min-w-0">
           {/* Scaled text typography layout from text-xs to text-sm */}
-          <Link to="/product/$id" params={{ id: product.id }} className="block truncate text-lg font-medium uppercase tracking-widest text-foreground">
+          <Link to="/product/$id" params={{ id: product.id }} className="block truncate text-xs font-medium uppercase tracking-widest text-foreground lg:text-sm">
             {product.name}
           </Link>
           <div className="mt-2 flex gap-1.5">
@@ -62,7 +62,7 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
         {/* Swapped currency token mapping and scaled metrics output layout weight metrics */}
-        <div className="shrink-0 text-lg font-semibold tabular-nums text-foreground font-mono">
+        <div className="shrink-0 text-xs font-semibold tabular-nums text-foreground font-mono lg:text-sm">
           {formatNaira(product.price)}
         </div>
       </div>
