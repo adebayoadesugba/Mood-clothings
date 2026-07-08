@@ -8,7 +8,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/custom-design")({
   head: () => ({
     meta: [
-      { title: "Custom Design — Mood Clothings:\Users\Adebayo\Downloads\admin.tsx" },
+      { title: "Custom Design — Mood Clothings" },
       { name: "description", content: "Upload your own design and let the Mood Clothings atelier bring it to life." },
     ],
   }),
@@ -16,36 +16,71 @@ export const Route = createFileRoute("/custom-design")({
 });
 
 function CustomDesign() {
-  const { user, openLogin } = useStore(); // Grab user authentication values natively
+  const { user, openLogin } = useStore(); 
   const [files, setFiles] = useState<{ name: string; url: string }[]>([]);
   const [dragging, setDragging] = useState(false);
   const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const addFiles = (list: FileList | null) => {
-    // Intercept file loading if the user has no session cache entry
     if (!user) {
       toast.error("Please sign in or create an account to upload design materials.");
       openLogin();
       return;
     }
     if (!list) return;
+    
+    // For local testing preview; in production, you'll route these blobs to a cloud storage service like Cloudinary or S3
     const next = Array.from(list).slice(0, 6).map((f) => ({ name: f.name, url: URL.createObjectURL(f) }));
     setFiles((prev) => [...prev, ...next].slice(0, 6));
   };
 
-  const handleSubmitBrief = (e: React.FormEvent) => {
+  const handleSubmitBrief = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Guard Check: Final security boundary validation fallback
     if (!user) {
       toast.error("Authentication required to submit custom briefs.");
       openLogin();
       return;
     }
 
-    toast.success("Design brief submitted — our atelier will be in touch.");
-    setFiles([]);
-    setNotes("");
+    setSubmitting(true);
+    const targetForm = e.currentTarget as HTMLFormElement;
+    const nameInput = targetForm.elements[0] as HTMLInputElement;
+    const emailInput = targetForm.elements[1] as HTMLInputElement;
+
+    try {
+      const token = localStorage.getItem("mood-clothings-auth-token");
+      
+      const res = await fetch("http://localhost:5000/api/custom-designs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          customerName: nameInput.value.trim(),
+          userEmail: emailInput.value.trim().toLowerCase(),
+          files: files, // Sending files object structure tracking reference items
+          notes: notes.trim()
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "The Atelier server rejected this custom design structure request.");
+      }
+
+      toast.success("Design brief submitted — our atelier will be in touch.");
+      setFiles([]);
+      setNotes("");
+    } catch (err: any) {
+      console.error("Atelier brief error track:", err);
+      toast.error(err.message || "Failed to deliver design brief parameters to database.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -114,8 +149,12 @@ function CustomDesign() {
               className="mt-1 w-full resize-none border-b border-hairline bg-transparent py-2 text-sm outline-none focus:border-foreground"
             />
           </div>
-          <button type="submit" className="w-full bg-foreground py-3 text-xs uppercase tracking-widest text-background transition-transform hover:scale-[1.01]">
-            Submit Design Brief
+          <button 
+            type="submit" 
+            disabled={submitting}
+            className="w-full bg-foreground py-3 text-xs uppercase tracking-widest text-background transition-transform hover:scale-[1.01] disabled:opacity-50"
+          >
+            {submitting ? "Delivering Brief..." : "Submit Design Brief"}
           </button>
         </form>
       </div>

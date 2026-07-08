@@ -20,7 +20,7 @@ const ADMIN_KEY = "moon-clothings-admin-v1";
 const DEMO_EMAIL = "admin@moon-clothings.com";
 const DEMO_PASS = "admin123";
 
-type AdminSession = { email: string } | null;
+type AdminSession = { email: string; token: string } | null; 
 type Tab = "products" | "orders" | "customers" | "designs";
 
 type AdminProduct = Product & { _id?: string; tags: string[]; stockSizes: string[]; sold: number };
@@ -30,8 +30,9 @@ const SIZE_OPTIONS = ["S", "M", "L", "XL", "XXL"];
 
 type Order = {
   id: string;
-  customer: { name: string; email: string; phone: string; address: string };
-  items: { id: string; name: string; image: string; color: string; size: string; qty: number; price: number }[];
+  _id?: string;
+  customer: { name: string; email: string; phone: string; address: string; city?: string; zip?: string };
+  items: { product: string; name: string; image: string; color: string; size: string; qty: number; price: number }[];
   total: number;
   status: "Pending Paid" | "Processing" | "Shipped" | "Delivered" | "Cancelled";
   tracking?: string;
@@ -40,10 +41,12 @@ type Order = {
 
 type UserDesign = {
   id: string;
-  name: string;
-  email: string;
-  note: string;
-  images: string[];
+  _id?: string;
+  customerName: string;
+  userEmail: string;
+  notes: string;
+  files: { name: string; url: string }[];
+  status?: string;
   createdAt: string;
 };
 
@@ -67,8 +70,8 @@ function seedOrders(products: AdminProduct[]): Order[] {
     const p = products[i % products.length];
     const p2 = products[(i + 3) % products.length];
     const items = [
-      { id: p.id, name: p.name, image: p.images[0], color: p.colors[0], size: "M", qty: 1, price: p.price },
-      { id: p2.id, name: p2.name, image: p2.images[0], color: p2.colors[0], size: "L", qty: 2, price: p2.price },
+      { product: p.id, name: p.name, image: p.images[0], color: p.colors[0], size: "M", qty: 1, price: p.price },
+      { product: p2.id, name: p2.name, image: p2.images[0], color: p2.colors[0], size: "L", qty: 2, price: p2.price },
     ];
     const total = items.reduce((s, it) => s + it.price * it.qty, 0);
     return {
@@ -85,25 +88,25 @@ function seedUserDesigns(): UserDesign[] {
   return [
     {
       id: "DSN-4001",
-      name: "Tunde Bakare",
-      email: "tunde@bakaredigital.com",
+      customerName: "Tunde Bakare",
+      userEmail: "tunde@bakaredigital.com",
       createdAt: "2026-07-04",
-      note: "I want this specific vintage wash denim block tailored with custom embroidery on the back panel. Please ensure the structural heavy canvas feels thick and matching industrial zippers are mounted along the seams.",
-      images: [
-        "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=500",
-        "https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=500"
+      notes: "I want this specific vintage wash denim block tailored with custom embroidery on the back panel. Please ensure the structural heavy canvas feels thick and matching industrial zippers are mounted along the seams.",
+      files: [
+        { name: "atelier-sketch-front.png", url: "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=500" },
+        { name: "fabric-texture-moodboard.jpg", url: "https://images.unsplash.com/photo-1516257984-b1b4d707412e?w=500" }
       ]
     },
     {
       id: "DSN-4002",
-      name: "Chidi Collins",
-      email: "chidi.collins@creative.ng",
+      customerName: "Chidi Collins",
+      userEmail: "chidi.collins@creative.ng",
       createdAt: "2026-07-02",
-      note: "Oversized silhouette tracksuit drop mock style. Attach the custom logo patch on the left chest plate. Let the inner fleece matching layer stay soft cream white.",
-      images: [
-        "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=500",
-        "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=500",
-        "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500"
+      notes: "Oversized silhouette tracksuit drop mock style. Attach the custom logo patch on the left chest plate. Let the inner fleece matching layer stay soft cream white.",
+      files: [
+        { name: "sketch.png", url: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=500" },
+        { name: "mockup.png", url: "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=500" },
+        { name: "blueprint.png", url: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500" }
       ]
     }
   ];
@@ -122,8 +125,17 @@ function AdminPage() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(ADMIN_KEY);
-      if (raw) setSession(JSON.parse(raw));
-    } catch { /* ignore */ }
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.token && parsed?.email) {
+          setSession(parsed);
+        } else {
+          setSession(null);
+        }
+      }
+    } catch { 
+      setSession(null);
+    }
     setReady(true);
   }, []);
 
@@ -150,30 +162,39 @@ function AdminPage() {
         throw new Error(data.message || "Invalid administrative credentials.");
       }
       
-      if (data.isAdmin === false) {
-        toast.error("Access denied: Account is not flagged as an Administrator.");
-        return;
+      // Isolate the user values accurately matching data layout payloads
+      const profileData = data.data || data.user || data;
+
+      // FIXED: Validates based on your Mongoose schema string enum "role" definition directly
+      if (profileData?.role !== "admin" && data.user?.role !== "admin" && data.data?.role !== "admin") {
+        throw new Error("Access denied: This profile is not authorized as an administrative workspace controller.");
       }
 
       const sessionData = { 
-        email: data.email, 
+        email: profileData.email, 
         token: data.token 
       };
       
       localStorage.setItem(ADMIN_KEY, JSON.stringify(sessionData));
-      setSession({ email: data.email });
+      setSession(sessionData);
       toast.success("Authorized: Signed in securely to admin panel");
-      
-      window.location.reload(); 
     } catch (err: any) {
       console.error("Authentication handshake failure:", err);
-      toast.error(err.message || "Unable to reach auth server. Please check your backend connection status.");
+      toast.error(err.message || "Unable to verify administrative credentials.");
     }
   };
-  const logout = () => { localStorage.removeItem(ADMIN_KEY); setSession(null); };
+
+  const logout = () => { 
+    localStorage.removeItem(ADMIN_KEY); 
+    setSession(null); 
+    toast.success("Administrative session closed safely.");
+  };
 
   if (!ready) return <div className="min-h-screen bg-background" />;
-  if (!session) return <LoginScreen onLogin={login} />;
+  
+  if (!session || !session.token) {
+    return <LoginScreen onLogin={login} />;
+  }
 
   return (
     <div className="h-screen overflow-hidden bg-background text-foreground text-lg">
@@ -224,10 +245,10 @@ function AdminPage() {
           </header>
           
           <div className="flex-1 overflow-y-auto p-6 md:p-10">
-            {tab === "products" && <ProductsModule products={products} setProducts={setProducts} refreshInventory={refreshInventory} />}
-            {tab === "orders" && <OrdersModule orders={orders} setOrders={setOrders} />}
-            {tab === "customers" && <CustomersModule orders={orders} />}
-            {tab === "designs" && <DesignsModule designs={designs} setDesigns={setDesigns} />}
+            {tab === "products" && <ProductsModule sessionToken={session.token} products={products} setProducts={setProducts} refreshInventory={refreshInventory} />}
+            {tab === "orders" && <OrdersModule sessionToken={session.token} orders={orders} setOrders={setOrders} />}
+            {tab === "customers" && <CustomersModule sessionToken={session.token} orders={orders} />}
+            {tab === "designs" && <DesignsModule sessionToken={session.token} designs={designs} setDesigns={setDesigns} />}
           </div>
         </div>
       </div>
@@ -273,16 +294,14 @@ function emptyProduct(): AdminProduct {
   };
 }
 
-function ProductsModule({ products, setProducts, refreshInventory }: { products: AdminProduct[]; setProducts: (p: AdminProduct[]) => void; refreshInventory: () => Promise<void> }) {
+function ProductsModule({ sessionToken, products, setProducts, refreshInventory }: { sessionToken: string; products: AdminProduct[]; setProducts: (p: AdminProduct[]) => void; refreshInventory: () => Promise<void> }) {
   const [editing, setEditing] = useState<AdminProduct | null>(null);
   const API_BASE_URL = "http://localhost:5000/api/products"; 
 
   const getAuthHeaders = () => {
-    const sessionRaw = localStorage.getItem(ADMIN_KEY);
-    const token = sessionRaw ? JSON.parse(sessionRaw)?.token : "";
     return {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token || ""}`
+      "Authorization": `Bearer ${sessionToken || ""}`
     };
   };
 
@@ -327,7 +346,6 @@ function ProductsModule({ products, setProducts, refreshInventory }: { products:
     if (!p.colors || p.colors.length === 0) { toast.error("At least one Color Swatch is required!"); return; }
     if (!p.stockSizes || p.stockSizes.length === 0) { toast.error("At least one Available Size Parameter must be selected!"); return; }
     
-    // FIXED: Formats tags cleanly to string enums ('New', 'Best Seller', 'Out of Stock') matching Mongoose strict array definitions
     let mappedMongooseTag = "";
     if (p.tags?.includes("New Arrival")) {
       mappedMongooseTag = "New";
@@ -350,7 +368,7 @@ function ProductsModule({ products, setProducts, refreshInventory }: { products:
       images: p.images,
       stockSizes: p.stockSizes,
       badge: mappedMongooseTag,
-      tags: mappedMongooseTag ? [mappedMongooseTag] : [], // FIXED: Sent as array containing pure schema enum variable just like Postman body
+      tags: mappedMongooseTag ? [mappedMongooseTag] : [], 
       rating: p.rating || 5,         
       reviewCount: p.reviewCount || 0, 
       sold: p.sold || 0              
@@ -398,7 +416,7 @@ function ProductsModule({ products, setProducts, refreshInventory }: { products:
       setEditing(null);
     } catch (err) {
       console.error("Failed executing dynamic asset payload synchronization script", err);
-      toast.error("Server synchronization error. Changes rejected.");
+      toast.error("Unable to save changes. Please try again.");
     }
   };
 
@@ -704,10 +722,36 @@ function Field({ label, className, children }: { label: string; className?: stri
   );
 }
 
-// Left the remainder of your modules untouched, with responsive text elements preserved securely
-function OrdersModule({ orders, setOrders }: { orders: Order[]; setOrders: (o: Order[]) => void }) {
+function OrdersModule({ sessionToken, orders, setOrders }: { sessionToken: string; orders: Order[]; setOrders: (o: Order[]) => void }) {
   const [tab, setTab] = useState<"all" | "pending" | "settled">("all");
   const [openId, setOpenId] = useState<string | null>(null);
+  const API_ORDERS_URL = "http://localhost:5000/api/orders";
+
+  const getHeaders = () => ({
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${sessionToken}`
+  });
+
+  useEffect(() => {
+    const fetchLiveOrders = async () => {
+      try {
+        const res = await fetch(API_ORDERS_URL, { headers: { "Authorization": `Bearer ${sessionToken}` } });
+        if (!res.ok) throw new Error("Order parameters validation error");
+        const json = await res.json();
+        const payload = Array.isArray(json) ? json : Array.isArray(json.data) ? json.data : [];
+        
+        const standardized = payload.map((o: any) => ({
+          ...o,
+          id: o.id || o._id,
+          createdAt: o.createdAt ? o.createdAt.slice(0, 10) : new Date().toISOString().slice(0, 10)
+        }));
+        if (standardized.length > 0) setOrders(standardized);
+      } catch (err) {
+        console.error("Failed pulling logs from backend MongoDB databases cluster:", err);
+      }
+    };
+    fetchLiveOrders();
+  }, [setOrders, sessionToken]);
 
   const filtered = useMemo(() => {
     if (tab === "pending") return orders.filter((o) => o.status === "Pending Paid" || o.status === "Processing");
@@ -715,7 +759,22 @@ function OrdersModule({ orders, setOrders }: { orders: Order[]; setOrders: (o: O
     return orders;
   }, [orders, tab]);
 
-  const update = (id: string, patch: Partial<Order>) => setOrders(orders.map((o) => (o.id === id ? { ...o, ...patch } : o)));
+  const update = async (id: string, patch: Partial<Order>) => {
+    const targetId = orders.find(o => o.id === id)?._id || id;
+    try {
+      const res = await fetch(`${API_ORDERS_URL}/${targetId}`, {
+        method: "PUT",
+        headers: getHeaders(),
+        body: JSON.stringify(patch)
+      });
+      if (!res.ok) throw new Error("Modification write check rejected.");
+      setOrders(orders.map((o) => (o.id === id ? { ...o, ...patch } : o)));
+      toast.success("Order metrics tracking status mutation synchronized with database layers.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to alter pipeline parameters on backend MongoDB fields.");
+    }
+  };
 
   return (
     <div className="h-full flex flex-col text-lg">
@@ -740,7 +799,7 @@ function OrdersModule({ orders, setOrders }: { orders: Order[]; setOrders: (o: O
             <div key={o.id} className="border-hairline">
               <button onClick={() => setOpenId(open ? null : o.id)} className="grid w-full grid-cols-6 items-center gap-4 px-4 py-4 text-left text-lg hover:bg-secondary/30">
                 {open ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-                <span className="font-medium tracking-wide">{o.id}</span>
+                <span className="font-medium tracking-wide truncate">{o.id}</span>
                 <span className="truncate">{o.customer.name}</span>
                 <span className="text-muted-foreground text-lg font-mono">{o.createdAt}</span>
                 <span className="font-medium font-mono">${o.total}</span>
@@ -752,9 +811,10 @@ function OrdersModule({ orders, setOrders }: { orders: Order[]; setOrders: (o: O
                     <p className="text-lg uppercase tracking-widest text-muted-foreground font-medium">Customer Information</p>
                     <div className="mt-2 border border-hairline bg-background p-4 text-lg leading-relaxed">
                       <p className="font-medium text-xl">{o.customer.name}</p>
-                      <p className="text-muted-foreground text-lg mt-1">{o.customer.address}</p>
+                      <p className="text-muted-foreground text-lg mt-1">{o.customer.address} {o.customer.city || ""} {o.customer.zip || ""}</p>
                       <p className="mt-3 text-lg border-t border-hairline/60 pt-2"><span className="text-muted-foreground">Email:</span> {o.customer.email}</p>
                       <p className="text-lg font-medium mt-1"><span className="text-lg text-muted-foreground font-normal">Phone:</span> {o.customer.phone}</p>
+                      {o.customer.phone2 && <p className="text-lg font-medium mt-1"><span className="text-lg text-muted-foreground font-normal">Alt Phone:</span> {o.customer.phone2}</p>}
                     </div>
                     <div className="mt-4">
                       <label className="text-lg uppercase tracking-widest text-muted-foreground font-medium">Fulfillment Status Pipeline Route</label>
@@ -811,7 +871,8 @@ function CustomersModule({ orders }: { orders: Order[] }) {
   const map = new Map<string, { name: string; email: string; phone: string; orders: number; spent: number }>();
   for (const o of orders) {
     const c = map.get(o.customer.email) || { name: o.customer.name, email: o.customer.email, phone: o.customer.phone, orders: 0, spent: 0 };
-    c.orders += 1; c.spent += o.total;
+    c.orders += 1; 
+    c.spent += o.total;
     map.set(o.customer.email, c);
   }
   const list = Array.from(map.values());
@@ -850,14 +911,70 @@ function CustomersModule({ orders }: { orders: Order[] }) {
   );
 }
 
-function DesignsModule({ designs, setDesigns }: { designs: UserDesign[]; setDesigns: (d: UserDesign[]) => void }) {
+function DesignsModule({ sessionToken, designs, setDesigns }: { sessionToken: string; designs: UserDesign[]; setDesigns: (d: UserDesign[]) => void }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const API_DESIGNS_URL = "http://localhost:5000/api/custom-designs";
 
-  const removeDesign = (id: string, e: React.MouseEvent) => {
+  useEffect(() => {
+    const fetchLiveDesigns = async () => {
+      try {
+        const res = await fetch(API_DESIGNS_URL, { headers: { "Authorization": `Bearer ${sessionToken}` } });
+        if (!res.ok) throw new Error("Designs loading network check rejected.");
+        const json = await res.json();
+        const payload = Array.isArray(json) ? json : Array.isArray(json.data) ? json.data : [];
+        
+        const standardized = payload.map((d: any) => ({
+          id: d.id || d._id,
+          _id: d._id,
+          customerName: d.customerName || "Bespoke Customer",
+          userEmail: d.userEmail || d.email || "",
+          notes: d.notes || d.note || "",
+          files: Array.isArray(d.files) ? d.files : Array.isArray(d.images) ? d.images.map((img: string) => ({ name: "Asset Reference", url: img })) : [],
+          status: d.status || "Received",
+          createdAt: d.createdAt ? d.createdAt.slice(0, 10) : new Date().toISOString().slice(0, 10)
+        }));
+        if (standardized.length > 0) setDesigns(standardized);
+      } catch (err) {
+        console.error("Failed pulling logged Atelier briefs from MongoDB:", err);
+      }
+    };
+    fetchLiveDesigns();
+  }, [setDesigns, sessionToken]);
+
+  const updateBriefStatus = async (id: string, newStatus: string) => {
+    const targetId = designs.find(d => d.id === id)?._id || id;
+    try {
+      const res = await fetch(`${API_DESIGNS_URL}/${targetId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${sessionToken}` },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (!res.ok) throw new Error("Atelier state mutation error.");
+      setDesigns(designs.map(d => d.id === id ? { ...d, status: newStatus } : d));
+      toast.success("Design brief process parameters updated across collections.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to alter Atelier process tracking markers.");
+    }
+  };
+
+  const removeDesign = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setDesigns(designs.filter((d) => d.id !== id));
-    toast.success("Design custom item record removed");
+    if (!window.confirm("Drop this custom brief file permanently from active server databases?")) return;
+    const targetId = designs.find(d => d.id === id)?._id || id;
+    try {
+      const res = await fetch(`${API_DESIGNS_URL}/${targetId}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${sessionToken}` }
+      });
+      if (!res.ok) throw new Error("Atelier drop call rejected.");
+      setDesigns(designs.filter((d) => d.id !== id));
+      toast.success("Design custom item record removed");
+    } catch (err) {
+      console.error(err);
+      toast.error("Unable to prune selected document reference link.");
+    }
   };
 
   const downloadImage = (url: string) => {
@@ -888,12 +1005,13 @@ function DesignsModule({ designs, setDesigns }: { designs: UserDesign[]; setDesi
               >
                 <div className="flex items-center gap-2">
                   {open ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-                  <span className="font-medium tracking-wide">{d.id}</span>
+                  <span className="font-medium tracking-wide truncate">{d.id}</span>
                 </div>
-                <span className="truncate font-medium">{d.name}</span>
+                <span className="truncate font-medium">{d.customerName}</span>
                 <span className="text-muted-foreground text-lg font-mono">{d.createdAt}</span>
                 <div className="justify-self-end col-span-2 flex items-center gap-4">
-                  <span className="text-lg text-muted-foreground bg-secondary px-2 py-0.5 border border-hairline font-mono">{d.images.length} Canvas Attachments</span>
+                  <span className="text-lg text-muted-foreground bg-secondary px-2 py-0.5 border border-hairline font-mono">{d.files.length} Canvas Attachments</span>
+                  <span className="text-xs uppercase tracking-wider font-semibold px-2 py-0.5 border border-hairline bg-background">{d.status || "Received"}</span>
                   <button onClick={(e) => removeDesign(d.id, e)} className="p-1 text-muted-foreground hover:text-destructive transition-colors z-10" aria-label="Delete entry"><Trash2 className="h-4 w-4" /></button>
                 </div>
               </div>
@@ -904,19 +1022,19 @@ function DesignsModule({ designs, setDesigns }: { designs: UserDesign[]; setDesi
                     <div>
                       <p className="text-lg uppercase tracking-widest text-muted-foreground font-medium mb-2">Long Specifications Note</p>
                       <div className="bg-background border border-hairline p-4 text-lg leading-relaxed whitespace-pre-wrap font-sans text-foreground select-text max-h-60 overflow-y-auto">
-                        {d.note}
+                        {d.notes}
                       </div>
                     </div>
 
                     <div>
                       <p className="text-lg uppercase tracking-widest text-muted-foreground font-medium mb-2">Attached Image Files (Up to 6 Assets - Click to Expand &amp; Download)</p>
                       <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
-                        {d.images.map((img, i) => (
-                          <div key={i} className="relative aspect-square bg-secondary border border-hairline overflow-hidden group shadow-sm cursor-pointer" onClick={() => setLightboxImage(img)}>
-                            <img src={img} alt={`User Attachment ${i + 1}`} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+                        {d.files.map((fileObj, i) => (
+                          <div key={i} className="relative aspect-square bg-secondary border border-hairline overflow-hidden group shadow-sm cursor-pointer" onClick={() => setLightboxImage(fileObj.url)}>
+                            <img src={fileObj.url} alt={fileObj.name || `User Attachment ${i + 1}`} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy" />
                             <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                              <span className="bg-background/90 text-foreground p-1.5 shadow-md border border-hairline rounded-full hover:scale-110 transition-transform" onClick={(e) => { e.stopPropagation(); setLightboxImage(img); }}><Maximize2 className="h-4 w-4" /></span>
-                              <span className="bg-background/90 text-foreground p-1.5 shadow-md border border-hairline rounded-full hover:scale-110 transition-transform" onClick={(e) => { e.stopPropagation(); downloadImage(img); }}><Download className="h-4 w-4" /></span>
+                              <span className="bg-background/90 text-foreground p-1.5 shadow-md border border-hairline rounded-full hover:scale-110 transition-transform" onClick={(e) => { e.stopPropagation(); setLightboxImage(fileObj.url); }}><Maximize2 className="h-4 w-4" /></span>
+                              <span className="bg-background/90 text-foreground p-1.5 shadow-md border border-hairline rounded-full hover:scale-110 transition-transform" onClick={(e) => { e.stopPropagation(); downloadImage(fileObj.url); }}><Download className="h-4 w-4" /></span>
                             </div>
                           </div>
                         ))}
@@ -924,14 +1042,27 @@ function DesignsModule({ designs, setDesigns }: { designs: UserDesign[]; setDesi
                     </div>
                   </div>
 
-                  <div>
-                    <p className="text-lg uppercase tracking-widest text-muted-foreground font-medium">User Contact Signature</p>
-                    <div className="mt-2 border border-hairline bg-background p-4 text-lg leading-relaxed">
-                      <p className="font-semibold text-xl text-foreground">{d.name}</p>
-                      <p className="text-muted-foreground text-lg mt-1 font-mono break-all">{d.email}</p>
-                      <div className="mt-4 border-t border-hairline/60 pt-3">
-                        <button onClick={() => window.location.href = `mailto:${d.email}?subject=Moon%20Clothings%20-%20Regarding%20Your%20Custom%20Design%20${d.id}`} className="w-full bg-foreground text-background text-lg uppercase tracking-widest py-2 text-center transition-opacity hover:opacity-90">Open Mail Dialog</button>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-lg uppercase tracking-widest text-muted-foreground font-medium">User Contact Signature</p>
+                      <div className="mt-2 border border-hairline bg-background p-4 text-lg leading-relaxed">
+                        <p className="font-semibold text-xl text-foreground">{d.customerName}</p>
+                        <p className="text-muted-foreground text-lg mt-1 font-mono break-all">{d.userEmail}</p>
+                        <div className="mt-4 border-t border-hairline/60 pt-3">
+                          <button onClick={() => window.location.href = `mailto:${d.userEmail}?subject=Moon%20Clothings%20-%20Regarding%20Your%20Custom%20Design%20${d.id}`} className="w-full bg-foreground text-background text-lg uppercase tracking-widest py-2 text-center transition-opacity hover:opacity-90">Open Mail Dialog</button>
+                        </div>
                       </div>
+                    </div>
+                    
+                    <div>
+                      <label className="text-lg uppercase tracking-widest text-muted-foreground font-medium">Brief Workflow Matrix Status</label>
+                      <select value={d.status || "Received"} onChange={(e) => updateBriefStatus(d.id, e.target.value)}
+                        className="mt-1 w-full border-2 border-foreground/30 rounded px-3 py-2 bg-background text-lg outline-none focus:border-foreground">
+                        <option value="Received">Received</option>
+                        <option value="Under Atelier Review">Under Atelier Review</option>
+                        <option value="Quote Issued">Quote Issued</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
                     </div>
                   </div>
                 </div>
