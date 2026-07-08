@@ -12,13 +12,14 @@ import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { StoreProvider } from "@/lib/store";
+import { StoreProvider, useStore } from "@/lib/store";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SearchOverlay } from "@/components/SearchOverlay";
 import { CartDrawer } from "@/components/CartDrawer";
 import { LoginModal } from "@/components/LoginModal";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { toast } from "sonner";
 
 function NotFoundComponent() {
   return (
@@ -91,6 +92,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" },
       { rel: "icon", href: "/images/MOOD icon.png", type: "image/x-icon" },
     ],
+    scripts: [
+      { src: "https://accounts.google.com/gsi/client", async: true, defer: true }
+    ]
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -112,22 +116,81 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+// INLINE INITIALIZER WRAPPER: Handles global base64 payload decoding hooks cleanly inside context limits
+function GoogleAuthInitializer({ children }: { children: ReactNode }) {
+  const { setUser } = useStore();
+
+  useEffect(() => {
+    const googleClientId = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+
+    (window as any).handleGoogleCredentialResponse = (response: any) => {
+      try {
+        const jwtToken = response.credential;
+        const base64Url = jwtToken.split(".")[1];
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        const decodedPayload = JSON.parse(window.atob(base64));
+
+        const googleUserProfile = {
+          name: decodedPayload.name,
+          email: decodedPayload.email,
+          phone: "",
+        };
+
+        setUser(googleUserProfile, jwtToken);
+        toast.success(`Successfully signed in via Google as ${googleUserProfile.name}`);
+      } catch (err) {
+        console.error("Google profile decoding mishap:", err);
+        toast.error("Unable to parse Google authentication parameters.");
+      }
+    };
+
+    // FIXED SINGLETON INITIALIZER: Guards the initialization method block to prevent re-execution warnings
+    const initGoogle = () => {
+      if ((window as any).google?.accounts?.id) {
+        if ((window as any).__googleInitialized) return true; // Stop here if already done!
+
+        (window as any).google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: (window as any).handleGoogleCredentialResponse,
+        });
+        
+        (window as any).__googleInitialized = true;
+        return true;
+      }
+      return false;
+    };
+
+    if (!initGoogle()) {
+      const interval = setInterval(() => {
+        if (initGoogle()) {
+          clearInterval(interval);
+        }
+      }, 500);
+      return () => clearInterval(interval);
+    }
+  }, [setUser]);
+
+  return <>{children}</>;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
       <StoreProvider>
-        <Header />
-        <main className="min-h-screen">
-          <Outlet />
-        </main>
-        <Footer />
-        <SearchOverlay />
-        <CartDrawer />
-        <LoginModal />
-        <WhatsAppButton />
-        <Toaster position="bottom-left" />
+        <GoogleAuthInitializer>
+          <Header />
+          <main className="min-h-screen">
+            <Outlet />
+          </main>
+          <Footer />
+          <SearchOverlay />
+          <CartDrawer />
+          <LoginModal />
+          <WhatsAppButton />
+          <Toaster position="bottom-left" />
+        </GoogleAuthInitializer>
       </StoreProvider>
     </QueryClientProvider>
   );

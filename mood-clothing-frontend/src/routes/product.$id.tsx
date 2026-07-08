@@ -14,7 +14,7 @@ const findProductBySlug = (idParam: string, registryProducts: any[] = []) => {
   const match = allAvailable.find((p) => p.id === idParam || p._id === idParam || p.databaseId === idParam || convertToSlug(p.name) === idParam);
   
   if (!match && registryProducts.length === 0 && idParam) {
-    return { name: "Loading Garment...", description: "", images: [""], colors: ["#000000"], category: "collection", sub: "all", price: 0 };
+    return { name: "Mood Clothings", description: "", images: [""], colors: ["#000000"], category: "collection", sub: "all", price: 0 };
   }
   return match;
 };
@@ -25,9 +25,9 @@ export const Route = createFileRoute("/product/$id")({
     return {
       meta: p
         ? [
-            { title: `${p.name} — MOOD CLOTHINGS` },
+            { title: `${p.name} The Best Online Store` },
             { name: "description", content: p.description },
-            { property: "og:title", content: `${p.name} — MOOD CLOTHINGS` },
+            { property: "og:title", content: `${p.name} Mood Clothings` },
             { property: "og:description", content: p.description },
             { property: "og:image", content: p.images[0] },
             { name: "twitter:image", content: p.images[0] },
@@ -95,7 +95,7 @@ function ProductPage() {
   }, [currentReviews]);
 
   // FIXED EARLY EXIT LOADER: Intercepts component render cycle safely to display rolling spinner icon center-screen
-  if (isLoading || !product || product.name === "Loading Garment...") {
+  if (isLoading || !product || product.name === "Mood Clothings" || !product.id) {
     return (
       <div className="min-h-[70vh] w-full grid place-items-center bg-background">
         <div className="flex flex-col items-center gap-4">

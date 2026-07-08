@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { X, Eye, EyeOff } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 
 export function LoginModal() {
   const { loginOpen, closeLogin, setUser, user, logout } = useStore();
-  const [isSignUp, setIsSignUp] = useState(true); // Toggle between Sign Up and Sign In modes
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
+  
+  const [isSignUp, setIsSignUp] = useState(false); 
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const [loading, setLoading] = useState(false);
+  
+  // PASSWORD VISIBILITY TOGGLERS
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = loginOpen ? "hidden" : "";
@@ -15,14 +21,104 @@ export function LoginModal() {
     return () => { document.body.style.overflow = ""; window.removeEventListener("keydown", onKey); };
   }, [loginOpen, closeLogin]);
 
+  // RESET EFFECT: Clears inputs when a user successfully signs in
+  useEffect(() => {
+    if (user) {
+      setForm({ name: "", email: "", password: "", confirmPassword: "" });
+      setShowPassword(false);
+      setShowConfirmPassword(false);
+    }
+  }, [user]);
+
   const handleGoogleSignIn = () => {
-    const mockGoogleUser = {
-      name: "Alex Sterling",
-      email: "alex.sterling@gmail.com",
-      phone: "+1 (555) 019-2834"
-    };
-    setUser(mockGoogleUser);
-    toast.success("Successfully authenticated with Google.");
+    if ((window as any).google?.accounts?.id) {
+      (window as any).google.accounts.id.prompt();
+    } else {
+      toast.error("Google authentication client is initializing. Please try again.");
+    }
+  };
+
+  // CONNECTED BACKEND SYSTEM HANDLER PIPELINE
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const BASE_AUTH_URL = "http://localhost:5000/api/auth";
+
+    try {
+      if (isSignUp) {
+        // 1. SIGN UP ROUTE HANDLER
+        if (!form.name || !form.email || !form.password || !form.confirmPassword) {
+          throw new Error("Please fill out all fields required to register.");
+        }
+
+        if (form.password !== form.confirmPassword) {
+          throw new Error("Passwords do not match. Please verify your choices.");
+        }
+        
+        const res = await fetch(`${BASE_AUTH_URL}/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: form.name.trim(),
+            email: form.email.trim().toLowerCase(),
+            password: form.password
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          if (data.message?.toLowerCase().includes("already") || res.status === 409) {
+            throw new Error("This email has already been used. Please log in instead.");
+          }
+          throw new Error(data.message || "Registration parameters rejected by backend database layer.");
+        }
+
+        // FIX: backend returns the user profile under `data.data`, not `data.user`
+        if (!data.data) {
+          throw new Error("Registration succeeded but no user data was returned by the server.");
+        }
+
+        setUser(data.data, data.token);
+        toast.success("Welcome to Mood Clothings — check your inbox for our welcome note.");
+        closeLogin();
+      } else {
+        // 2. SIGN IN ROUTE HANDLER
+        if (!form.email || !form.password) {
+          throw new Error("Please provide your email address and password.");
+        }
+
+        const res = await fetch(`${BASE_AUTH_URL}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: form.email.trim().toLowerCase(),
+            password: form.password
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.message || "Invalid email or password.");
+        }
+
+        // FIX: backend returns the user profile under `data.data`, not `data.user`
+        if (!data.data) {
+          throw new Error("Sign in succeeded but no user data was returned by the server.");
+        }
+
+        setUser(data.data, data.token);
+        toast.success("Signed in successfully.");
+        closeLogin();
+      }
+    } catch (err: any) {
+      console.error("Authentication submission barrier:", err);
+      toast.error(err.message || "Unable to complete request. Please verify server connection.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!loginOpen) return null;
@@ -40,15 +136,30 @@ export function LoginModal() {
       >
         <button onClick={closeLogin} aria-label="Close" className="absolute right-4 top-4"><X className="h-4 w-4" /></button>
         {user ? (
-          <div>
-            <h2 className="font-display text-2xl">Welcome back, {user.name.split(" ")[0]}</h2>
-            <p className="mt-2 text-sm text-muted-foreground">{user.email}</p>
-            <button
-              onClick={() => { logout(); toast.success("Signed out"); }}
-              className="mt-8 w-full border border-foreground py-3 text-xs uppercase tracking-widest hover:bg-foreground hover:text-background"
-            >
-              Sign out
-            </button>
+          <div className="text-center py-4">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground mb-1">Active Session</p>
+            <h2 className="font-display text-3xl">Welcome back, {user.name.split(" ")[0]}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
+            
+            <div className="mt-8 space-y-3">
+              <button
+                onClick={() => { logout(); toast.success("Signed out"); }}
+                className="w-full bg-foreground text-background py-3 text-xs uppercase tracking-widest transition-colors border border-foreground hover:bg-transparent hover:text-foreground"
+              >
+                Sign out
+              </button>
+              
+              <button
+                onClick={() => { 
+                  logout(); 
+                  setIsSignUp(false); 
+                  toast.success("Session closed. Please authenticate your alternate profile credentials.");
+                }}
+                className="w-full border border-hairline py-3 text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+              >
+                Sign in to another account
+              </button>
+            </div>
           </div>
         ) : (
           <div>
@@ -70,20 +181,7 @@ export function LoginModal() {
               </button>
             </div>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (isSignUp) {
-                  if (!form.name || !form.email || !form.phone || !form.password) return;
-                  setUser({ name: form.name, email: form.email, phone: form.phone });
-                  toast.success("Welcome to Mood Clothings — check your inbox for our welcome note.");
-                } else {
-                  if (!form.email || !form.password) return;
-                  setUser({ name: form.name || "Valued Guest", email: form.email, phone: form.phone || "" });
-                  toast.success("Signed in successfully.");
-                }
-              }}
-            >
+            <form onSubmit={handleSubmit}>
               <h2 className="font-display text-3xl">{isSignUp ? "Join Mood Clothings" : "Welcome Back"}</h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 {isSignUp 
@@ -117,35 +215,57 @@ export function LoginModal() {
                   />
                 </div>
 
-                {/* Sign Up Fields Only */}
-                {isSignUp && (
-                  <div>
-                    <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Phone Number</label>
-                    <input
-                      required
-                      type="tel"
-                      value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                      className="mt-1 w-full border-b border-hairline bg-transparent py-2 text-sm outline-none focus:border-foreground"
-                    />
-                  </div>
-                )}
-
                 {/* Always Show Password Field */}
                 <div>
                   <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Password</label>
-                  <input
-                    required
-                    type="password"
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    className="mt-1 w-full border-b border-hairline bg-transparent py-2 text-sm outline-none focus:border-foreground"
-                  />
+                  <div className="relative flex items-center">
+                    <input
+                      required
+                      type={showPassword ? "text" : "password"}
+                      value={form.password}
+                      onChange={(e) => setForm({ ...form, password: e.target.value })}
+                      className="mt-1 w-full border-b border-hairline bg-transparent py-2 pr-8 text-sm outline-none focus:border-foreground"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-1 text-muted-foreground hover:text-foreground mt-1"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
+
+                {/* Confirm Password Field (Sign Up Only) */}
+                {isSignUp && (
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Confirm Password</label>
+                    <div className="relative flex items-center">
+                      <input
+                        required
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={form.confirmPassword}
+                        onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                        className="mt-1 w-full border-b border-hairline bg-transparent py-2 pr-8 text-sm outline-none focus:border-foreground"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-1 text-muted-foreground hover:text-foreground mt-1"
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <button type="submit" className="mt-6 w-full bg-foreground py-3 text-xs uppercase tracking-widest text-background transition-transform hover:scale-[1.01]">
-                {isSignUp ? "Create Account" : "Sign In"}
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="mt-6 w-full bg-foreground py-3 text-xs uppercase tracking-widest text-background transition-transform hover:scale-[1.01] disabled:opacity-50 disabled:pointer-events-none"
+              >
+                {loading ? "Processing transaction..." : isSignUp ? "Create Account" : "Sign In"}
               </button>
 
               {/* Minimalist Divider Line */}

@@ -10,8 +10,8 @@ export const Route = createFileRoute("/wishlist")({
 });
 
 function WishlistPage() {
-  // Grab your live global PRODUCTS database items context directly alongside your actions
-  const { wishlist, user, openLogin, PRODUCTS: liveRegistry } = useStore();
+  // Grab your live global PRODUCTS database items context directly alongside your actions and isLoading status
+  const { wishlist, user, openLogin, PRODUCTS: liveRegistry, isLoading } = useStore();
 
   // Sort from latest added to oldest added, map, and filter out duplicates
   const items = [...wishlist]
@@ -26,6 +26,18 @@ function WishlistPage() {
     .filter((product, index, self) => 
       index === self.findIndex((p) => p.id === product.id)
     );
+
+  // FIXED LOADING INTERCEPTOR: Prevents the guest sign-in box from flashing during state initialization
+  if (isLoading) {
+    return (
+      <div className="min-h-[70vh] w-full grid place-items-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 border-[3px] border-hairline border-t-foreground rounded-full animate-spin" />
+          <p className="text-lg uppercase tracking-widest text-muted-foreground font-mono">Loading Your Wish List...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-8">

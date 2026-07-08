@@ -4,7 +4,7 @@ import { fetchAllProducts } from "@/api"; // Integrated global backend inventory
 import { convertToSlug } from "@/lib/utils"; // Import slug generator utility
 import { toast } from "sonner"; // Imported toast to handle the 3-second popup alert cleanly
 
-type CartItem = { id: string; qty: number; color?: string };
+type CartItem = { id: string; qty: number; color?: string; size?: string };
 type StoreState = {
   cart: CartItem[];
   wishlist: string[];
@@ -22,7 +22,7 @@ type Ctx = StoreState & {
   setQty: (id: string, qty: number) => void;
   toggleWishlist: (id: string) => void;
   trackView: (id: string) => void;
-  setUser: (u: StoreState["user"]) => void;
+  setUser: (u: StoreState["user"], token?: string) => void; // <-- UPDATED METHOD TO CAPTURE JWT PASSES
   logout: () => void;
   openCart: () => void; closeCart: () => void;
   openLogin: () => void; closeLogin: () => void;
@@ -38,22 +38,24 @@ type Ctx = StoreState & {
 };
 
 const StoreContext = createContext<Ctx | null>(null);
-const KEY = "glamora-store-v1";
 
-function loadInitial(): Pick<StoreState, "cart" | "wishlist" | "recent" | "user"> {
-  if (typeof window === "undefined") return { cart: [], wishlist: [], recent: [], user: null };
+// USER SCOPING SEED LOGIC: Dynamically generates cache keys based on current user session context with Incognito catch blocks
+function loadScopedData(email?: string): Pick<StoreState, "cart" | "wishlist" | "recent"> {
+  if (typeof window === "undefined") return { cart: [], wishlist: [], recent: [] };
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return { cart: [], wishlist: [], recent: [], user: null };
+    const storageKey = email ? `mood-clothings-${email.trim().toLowerCase()}` : "mood-clothings-guest";
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return { cart: [], wishlist: [], recent: [] };
     const parsed = JSON.parse(raw);
     return {
       cart: Array.isArray(parsed.cart) ? parsed.cart : [],
       wishlist: Array.isArray(parsed.wishlist) ? parsed.wishlist : [],
       recent: Array.isArray(parsed.recent) ? parsed.recent : [],
-      user: parsed.user ?? null,
     };
-  } catch {
-    return { cart: [], wishlist: [], recent: [], user: null };
+  } catch (err) {
+    // INCOGNITO FALLBACK: Returns empty memory profiles cleanly if browser sandboxing rejects reader privileges
+    console.warn("Storage access restricted by browser isolation policies. Falling back to runtime memory layers.");
+    return { cart: [], wishlist: [], recent: [] };
   }
 }
 
@@ -71,20 +73,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // Holds dynamic backend items fetched from MongoDB across the application instance lifecycle
   const [liveRegistry, setLiveRegistry] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // whitespace framework sync loading tracking state
+  const [isInventoryLoading, setIsInventoryLoading] = useState(true);
+  const [isHydrated, setIsHydrated] = useState(false); // <-- CRUCIAL FIX: Session verification guard state
 
-  // Safely sync localStorage cache data ONLY once the client layout safely mounts
+  // Initialize: Load core session tokens first, then fetch the correct scoped storage profile
   useEffect(() => {
-    const cachedData = loadInitial();
-    setState((s) => ({
-      ...s,
-      ...cachedData,
-    }));
+    try {
+      const savedUserRaw = localStorage.getItem("mood-clothings-active-user");
+      const activeUser = savedUserRaw ? JSON.parse(savedUserRaw) : null;
+      
+      const scopedCache = loadScopedData(activeUser?.email);
+      
+      setState((s) => ({
+        ...s,
+        user: activeUser,
+        ...scopedCache,
+      }));
+    } catch (err) {
+      console.error("Failed initializing isolated user state environments:", err);
+    } finally {
+      setIsHydrated(true); // <-- System validation setup completes securely here
+    }
   }, []);
 
   // FIXED REUSABLE INVENTORY SYNC PIPELINE: Pulls directly from MongoDB architecture
   const refreshInventory = useCallback(async () => {
-    setIsLoading(true);
+    setIsInventoryLoading(true);
     try {
       const response = await fetchAllProducts();
       const dataPayload = response?.data?.data || response?.data || [];
@@ -107,7 +121,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("Global store failed to sync backend inventory:", err);
     } finally {
-      setIsLoading(false);
+      setIsInventoryLoading(false);
     }
   }, []);
 
@@ -115,6 +129,58 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refreshInventory();
   }, [refreshInventory]);
+
+  // SCOPED SYNCHRONIZATION SIDE-EFFECT: Saves records exclusively under the user's specific email key block
+  useEffect(() => {
+    if (!isHydrated || typeof window === "undefined") return; // Avoid overwriting profiles early
+    try {
+      const storageKey = state.user ? `mood-clothings-${state.user.email.trim().toLowerCase()}` : "mood-clothings-guest";
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({ cart: state.cart, wishlist: state.wishlist, recent: state.recent })
+      );
+    } catch { 
+      console.debug("Runtime state updated in-memory (Storage writing restricted).");
+    }
+  }, [state.cart, state.wishlist, state.recent, state.user, isHydrated]);
+
+  // Handles traditional backend login/register success token passes securely
+  const setUser = useCallback((userProfile: StoreState["user"], token?: string) => {
+    if (userProfile) {
+      try {
+        localStorage.setItem("mood-clothings-active-user", JSON.stringify(userProfile));
+        if (token) localStorage.setItem("mood-clothings-auth-token", token);
+      } catch { /* ignore private write issues */ }
+      
+      const userCachedData = loadScopedData(userProfile.email);
+      
+      setState((s) => ({
+        ...s,
+        user: userProfile,
+        cart: userCachedData.cart,
+        wishlist: userCachedData.wishlist,
+        recent: userCachedData.recent,
+        loginOpen: false,
+      }));
+    }
+  }, []);
+
+  const logout = useCallback(() => {
+    try {
+      localStorage.removeItem("mood-clothings-active-user");
+      localStorage.removeItem("mood-clothings-auth-token");
+    } catch { /* ignore private write issues */ }
+    
+    const guestCachedData = loadScopedData();
+    setState((s) => ({
+      ...s,
+      user: null,
+      cart: guestCachedData.cart,
+      wishlist: guestCachedData.wishlist,
+      recent: guestCachedData.recent,
+    }));
+    toast.success("Logged out safely from active session context");
+  }, []);
 
   // Kept for backward compatibility if specific routes pass items manually
   const registerLiveProducts = useCallback((products: any[]) => {
@@ -134,30 +200,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return findStaticProduct(cleanId);
   }, [liveRegistry]);
 
-  useEffect(() => {
-    // Avoid overwriting storage blocks with fallback values before mounting has completely finished
-    if (typeof window !== "undefined" && (state.cart.length > 0 || state.wishlist.length > 0 || state.recent.length > 0 || state.user)) {
-      try {
-        localStorage.setItem(
-          KEY,
-          JSON.stringify({ cart: state.cart, wishlist: state.wishlist, recent: state.recent, user: state.user })
-        );
-      } catch { /* ignore */ }
-    }
-  }, [state.cart, state.wishlist, state.recent, state.user]);
-
   const addToCart = useCallback((id: string, color?: string, qty = 1, size = "M") => {
     const product = findProduct(id);
     const productName = product ? product.name : "Item";
 
     setState((s) => {
-      // Check match including size
-      const existing = s.cart.find((c) => c.id === id && c.color === color && (c as any).size === size);
-      
+      const existing = s.cart.find((c) => c.id === id && c.color === color && c.size === size);
       const cart = existing
         ? s.cart.map((c) => (c === existing ? { ...c, qty: c.qty + qty } : c))
         : [...s.cart, { id, qty, color, size }];
-      
       return { ...s, cart };
     });
 
@@ -173,7 +224,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setQty = useCallback((id: string, qty: number) => {
     setState((s) => ({
       ...s,
-      ...state,
       cart: qty <= 0 ? s.cart.filter((c) => c.id !== id) : s.cart.map((c) => (c.id === id ? { ...c, qty } : c)),
     }));
   }, []);
@@ -188,9 +238,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const trackView = useCallback((id: string) => {
     setState((s) => ({ ...s, recent: [id, ...s.recent.filter((x) => x !== id)].slice(0, 12) }));
   }, []);
-
-  const setUser = useCallback((user: StoreState["user"]) => setState((s) => ({ ...s, user, loginOpen: false })), []);
-  const logout = useCallback(() => setState((s) => ({ ...s, user: null })), []);
 
   const openCart = useCallback(() => setState((s) => ({ ...s, cartOpen: true })), []);
   const closeCart = useCallback(() => setState((s) => ({ ...s, cartOpen: false })), []);
@@ -214,6 +261,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return { cartTotal: total, cartCount: count };
   }, [state.cart, findProduct]);
 
+  // Combined Loading Tracker Parameters: Wait until backend query AND storage reading finish together!
+  const isLoadingCombined = !isHydrated || isInventoryLoading;
+
   const value: Ctx = {
     ...state,
     addToCart, removeFromCart, setQty, toggleWishlist, trackView,
@@ -221,10 +271,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     openCart, closeCart, openLogin, closeLogin, openSearch, closeSearch,
     clearCart,
     registerLiveProducts,
-    findProduct, // <-- FIXED: INJECTED NATIVE METHOD EXPORT TO CONTEXT PROVIDER VALUE
-    refreshInventory, // <-- EXPOSED SYNC ACTION TO UPDATE INVENTORY LOCALLY ACROSS THE APP
+    findProduct, 
+    refreshInventory, 
     PRODUCTS: liveRegistry,
-    isLoading, // <-- EXPOSED LIVE STATUS TRACKER TO UI LAYERS
+    isLoading: isLoadingCombined, // <-- NOW INCLUDES SESSION HYDRATION STATUS ACCURATELY
     cartTotal, cartCount,
   };
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

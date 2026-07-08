@@ -37,8 +37,8 @@ export const Route = createFileRoute("/new-arrivals")({
 const MAX = 40;
 
 function NewArrivalsPage() {
-  // Grab live database products right from global context
-  const { PRODUCTS: liveRegistry } = useStore();
+  // Grab live database products right from global context along with loader flag
+  const { PRODUCTS: liveRegistry, isLoading } = useStore();
 
   // Rank: pieces flagged "New" first, then everything else in catalog order.
   // Cap at 40 so older items are pushed out as new ones are added.
@@ -53,6 +53,18 @@ function NewArrivalsPage() {
     withRank.sort((a, b) => a.rank - b.rank);
     return withRank.slice(0, MAX).map((x) => x.p);
   }, [liveRegistry]);
+
+  // Intercept view layer to display the spinning ring animation matching requested loader copy text
+  if (isLoading) {
+    return (
+      <div className="min-h-[70vh] w-full grid place-items-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 border-[3px] border-hairline border-t-foreground rounded-full animate-spin" />
+          <p className="text-lg uppercase tracking-widest text-muted-foreground font-mono">new arrival loading</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-8">

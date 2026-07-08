@@ -99,7 +99,7 @@ function Home() {
               Elevate your wardrobe and embrace your unique elegance with every click.
             </p>
             <Link
-              to="/"
+              to="/collection"
               className="mt-8 inline-flex items-center gap-2 border border-background/60 bg-background/10 px-6 py-3 text-xs uppercase tracking-widest backdrop-blur transition-transform hover:scale-[1.02]"
             >
               See Collection <ArrowUpRight className="h-4 w-4" />
@@ -141,7 +141,7 @@ function Home() {
         </div>
 
         <div className="mt-10 text-center">
-          <Link to="/" className="inline-flex items-center gap-2 border border-hairline px-6 py-3 text-[11px] uppercase tracking-widest hover:border-foreground">
+          <Link to="/new-arrivals" className="inline-flex items-center gap-2 border border-hairline px-6 py-3 text-[11px] uppercase tracking-widest hover:border-foreground">
             See More Products <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>
@@ -169,7 +169,7 @@ function Home() {
           </div>
         </div>
         <div className="mt-8 text-center">
-          <Link to="/" className="inline-flex items-center gap-2 border border-foreground bg-background px-6 py-3 text-[11px] uppercase tracking-widest hover:bg-foreground hover:text-background">
+          <Link to="/collection" className="inline-flex items-center gap-2 border border-foreground bg-background px-6 py-3 text-[11px] uppercase tracking-widest hover:bg-foreground hover:text-background">
             See Our New Collection <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>

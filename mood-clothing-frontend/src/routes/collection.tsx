@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductCard } from "@/components/ProductCard";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
-import { PRODUCTS as STATIC_PRODUCTS, CATEGORIES, SUBCATEGORIES, type Category, type SubCategory } from "@/lib/products";
+import { PRODUCTS as STATIC_PRODUCTS, CATEGORIES, SUBCATEGORIES, type Product, type Category, type SubCategory } from "@/lib/products";
 import { useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/collection")({
@@ -54,10 +54,10 @@ function CollectionPage() {
   const [sub, setSub] = useState<Sub>("all");
   const [tag, setTag] = useState<Tag>("all");
 
-  // Grab live database products right from global context
-  const { PRODUCTS: liveRegistry } = useStore();
+  // Grab live database products right from global context along with loader flag
+  const { PRODUCTS: liveRegistry, isLoading } = useStore();
 
-const items = useMemo(() => {
+  const items = useMemo(() => {
     // COMBINED INVENTORY PIPELINE: Merges backend live products and static fallback entries safely
     const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
     let list = shuffle(allInventory);
@@ -89,6 +89,18 @@ const items = useMemo(() => {
     
     return list;
   }, [cat, sub, tag, liveRegistry]);
+
+  // Intercept render cycle to show a spinning ring animation center-screen while fetching live products
+  if (isLoading) {
+    return (
+      <div className="min-h-[70vh] w-full grid place-items-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 border-[3px] border-hairline border-t-foreground rounded-full animate-spin" />
+          <p className="text-lg uppercase tracking-widest text-muted-foreground font-mono">Loading Collection Drop...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-8">

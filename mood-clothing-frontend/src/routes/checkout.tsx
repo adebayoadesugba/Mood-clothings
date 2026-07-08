@@ -4,6 +4,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
 import { useStore } from "@/lib/store";
 import { CheckCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/checkout")({
   head: () => ({ meta: [{ title: "Checkout — Mood Clothings" }, { name: "robots", content: "noindex" }] }),
@@ -16,13 +17,17 @@ function Checkout() {
   
   const [isOrdered, setIsOrdered] = useState(false);
   const [showContinueButton, setShowContinueButton] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
   const [form, setForm] = useState({
     email: user?.email ?? "",
     name: user?.name ?? "",
     address: "",
     city: "",
     zip: "",
-    country: "United States",
+    country: "Nigeria",
+    phone1: "",
+    phone2: "",
   });
 
   useEffect(() => {
@@ -30,45 +35,98 @@ function Checkout() {
     if (isOrdered) {
       timer = setTimeout(() => {
         setShowContinueButton(true);
-      }, 5000); // Changed back to 5000ms as per your original requirement
+      }, 5000);
     }
     return () => {
       if (timer) clearTimeout(timer);
     };
   }, [isOrdered]);
 
-  const handlePlaceOrder = (e: React.FormEvent) => {
+  const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // 1. Swap visual container presentation state instantly
-    setIsOrdered(true);
-    
-    // 2. Clear out local state caching layers immediately matching your store's key
-    localStorage.removeItem("moon clothings-store-v1");
-    localStorage.removeItem("cart");
-    localStorage.removeItem("mood clothings-cart");
-    localStorage.removeItem("mood-cart");
+    setLoading(true);
 
-    const storeKeys = Object.keys(localStorage);
-    storeKeys.forEach((key) => {
-      if (key.includes("store") || key.includes("cart") || key.includes("shop")) {
-        try {
-          const parsed = JSON.parse(localStorage.getItem(key) || "{}");
-          if (parsed?.state) {
-            parsed.state.cart = [];
-            parsed.state.cartTotal = 0;
-            localStorage.setItem(key, JSON.stringify(parsed));
-          }
-        } catch (err) {}
-      }
-    });
-
-    // 3. Force-close the drawer and manually mutate global store arrays
     try {
+      // 1. DYNAMICALLY MAP ITEMS TO MATCH MONGO SCHEMA REQS WITH SELECTED VARIANTS
+      const formattedItems = cart.map((item) => {
+        const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
+        const p = allInventory.find(
+          (product) => product.id === item.id || product._id === item.id || product.databaseId === item.id
+        );
+
+        if (!p) throw new Error(`Product metadata missing for entry ID: ${item.id}`);
+
+        return {
+          product: p.databaseId || p._id || p.id,
+          name: p.name,
+          image: p.images[0],
+          color: item.color || "Default",
+          size: item.size || "M",
+          qty: item.qty,
+          price: p.price,
+        };
+      });
+
+      // 2. DISPATCH STRUCTURED PAYLOAD TO MERN BACKEND ENDPOINT
+      const token = localStorage.getItem("mood-clothings-auth-token");
+      const res = await fetch("http://localhost:5000/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          customer: {
+            name: form.name.trim(),
+            email: form.email.trim().toLowerCase(),
+            phone: form.phone1.trim(),
+            phone2: form.phone2.trim() || undefined,
+            address: form.address.trim(),
+            city: form.city.trim(),
+            zip: form.zip.trim(),
+          },
+          items: formattedItems,
+          total: cartTotal,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Order submission rejected by your backend pipeline server.");
+      }
+
+      // 3. SUCCESS PIPELINE: SWAP VISUAL STATES & CLEAN STORAGE
+      setIsOrdered(true);
+      toast.success("Order logged in database successfully!");
+      
+      localStorage.removeItem("moon clothings-store-v1");
+      localStorage.removeItem("cart");
+      localStorage.removeItem("mood clothings-cart");
+      localStorage.removeItem("mood-cart");
+
+      const storeKeys = Object.keys(localStorage);
+      storeKeys.forEach((key) => {
+        if (key.includes("store") || key.includes("cart") || key.includes("shop")) {
+          try {
+            const parsed = JSON.parse(localStorage.getItem(key) || "{}");
+            if (parsed?.state) {
+              parsed.state.cart = [];
+              parsed.state.cartTotal = 0;
+              localStorage.setItem(key, JSON.stringify(parsed));
+            }
+          } catch (err) {}
+        }
+      });
+
       if (typeof closeCart === "function") closeCart();
       if (typeof clearCart === "function") clearCart();
-    } catch (err) {
-      console.warn("Global clean step fallback sequence activated");
+
+    } catch (err: any) {
+      console.error("Database order submission failed:", err);
+      toast.error(err.message || "Failed to finalize transaction with database server.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -157,6 +215,24 @@ function Checkout() {
                 <input required placeholder="ZIP" value={form.zip} onChange={(e) => setForm({ ...form, zip: e.target.value })}
                   className="w-full border-b border-hairline bg-transparent py-3 text-sm outline-none focus:border-foreground" />
               </div>
+
+              <div className="space-y-3 pt-2">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Primary Phone</label>
+                    <input required type="tel" placeholder="e.g. +234..." value={form.phone1} onChange={(e) => setForm({ ...form, phone1: e.target.value })}
+                      className="w-full border-b border-hairline bg-transparent py-2.5 text-sm outline-none focus:border-foreground" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Alternative Phone</label>
+                    <input type="tel" placeholder="e.g. +234..." value={form.phone2} onChange={(e) => setForm({ ...form, phone2: e.target.value })}
+                      className="w-full border-b border-hairline bg-transparent py-2.5 text-sm outline-none focus:border-foreground" />
+                  </div>
+                </div>
+                <p className="text-[11px] italic text-muted-foreground">
+                  * Note: For flawless delivery updates, please ensure at least one of these is connected to WhatsApp.
+                </p>
+              </div>
             </section>
             <section>
               <h2 className="text-xs uppercase tracking-widest text-muted-foreground">Payment</h2>
@@ -165,29 +241,51 @@ function Checkout() {
                 <div className="border border-hairline p-4 text-sm">Card ending •••• 4242 (demo)</div>
               </div>
             </section>
-            <button type="submit" className="w-full bg-foreground py-4 text-xs uppercase tracking-widest text-background transition-transform hover:scale-[1.01]">
-              Place Order · ${cartTotal}
-            </button>
+            
+            <div className="w-full max-w-xs">
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="w-full bg-foreground py-4 text-xs uppercase tracking-widest text-background transition-transform hover:scale-[1.01] disabled:opacity-50 disabled:pointer-events-none"
+              >
+                {loading ? "Processing Order..." : `Place Order · $${cartTotal}`}
+              </button>
+            </div>
           </div>
 
           <aside className="h-fit border border-hairline p-6">
-            <h3 className="text-xs uppercase tracking-widest">Order Summary</h3>
+            <h3 className="text-lg uppercase tracking-widest">Order Summary</h3>
             <ul className="mt-4 divide-y divide-[color:var(--hairline)]">
               {cart.map((item) => {
-                // FIXED UNIFIED LOOKUP ENGINE: Scans both client data models and dynamic liveRegistry documents
                 const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
                 const p = allInventory.find(
                   (product) => product.id === item.id || product._id === item.id || product.databaseId === item.id
                 );
                 if (!p) return null;
                 return (
-                  <li key={item.id + (item.color ?? "")} className="flex gap-3 py-3">
+                  <li key={item.id + (item.color ?? "") + (item.size ?? "")} className="flex gap-3 py-3">
                     <img src={p.images[0]} alt={p.name} className="h-16 w-14 object-cover" />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-xs uppercase tracking-widest">{p.name}</div>
-                      <div className="mt-1 text-xs text-muted-foreground">Qty {item.qty}</div>
+                      <div className="truncate text-sm uppercase tracking-widest">{p.name}</div>
+                      
+                      {/* FIXED VARIANTS PREVIEW: Displays selected parameters dynamically */}
+                      <div className="mt-1 flex flex-wrap gap-x-2 text-[11px] text-muted-foreground">
+                        {item.size && <span>Size: {item.size}</span>}
+                        {item.color && (
+                          <span className="flex items-center gap-1">
+                            Color: 
+                            <span 
+                              className="inline-block h-4 w-4 rounded-full border border-hairline" 
+                              style={{ backgroundColor: item.color }}
+                              title={item.color}
+                            />
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="mt-0.5 text-sm text-muted-foreground">Qty {item.qty}</div>
                     </div>
-                    <div className="shrink-0 text-sm tabular-nums">${p.price * item.qty}</div>
+                    <div className="shrink-0 text-lg tabular-nums">${p.price * item.qty}</div>
                   </li>
                 );
               })}
