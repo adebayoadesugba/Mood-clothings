@@ -33,7 +33,7 @@ export function Footer() {
         <div>
           <h4 className="mb-4 text-xs uppercase tracking-widest">Social Media</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li><a href="⁠@https://www.instagram.com/moodclothings/">Instagram</a></li>
+            <li><a href="https://www.instagram.com/moodclothings/">Instagram</a></li>
             <li><a href="#">TikTok</a></li>
             <li><a href="https://www.facebook.com/people/Mood-Clothings/100067132988739/#">Facebook</a></li>
             
@@ -44,6 +44,11 @@ export function Footer() {
         <div className="pointer-events-none select-none px-4 pb-4 text-center font-display text-[8vw] leading-none tracking-[0.05em] text-foreground/5 md:px-8">
           MOOD CLOTHINGS
         </div>
+      </div>
+      
+      {/* FIXED FOOTER SUBTEXT: Dynamic year automated tracking section container */}
+      <div className="border-t border-hairline/40 py-6 text-center text-xs uppercase tracking-widest text-muted-foreground/80 bg-background/20">
+        Copyright © {new Date().getFullYear()} Mood Clothings All Rights Reserved. Powered By Bizzle
       </div>
     </footer>
   );

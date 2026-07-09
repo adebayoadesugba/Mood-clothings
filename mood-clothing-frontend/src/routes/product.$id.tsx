@@ -61,7 +61,6 @@ function ProductPage() {
   const [size, setSize] = useState("M"); 
   const [qty, setQty] = useState(1);
   
-  // FIXED: Moved ALL hook initializations safely above any conditional exit check logic blocks
   const [newRating, setNewRating] = useState(5);
   const [newText, setNewText] = useState("");
   const [hoveredRating, setHoveredRating] = useState<number | null>(null);
@@ -81,12 +80,10 @@ function ProductPage() {
     }
   }, [product, trackView]);
 
-  // Formats currency fields cleanly to Naira parameters using commas
   const formatNaira = (amount: number) => {
     return "₦" + Number(amount).toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
 
-  // Combined review calculations wrapped cleanly within useMemo hooks
   const currentReviews = useMemo(() => {
     if (!product || !product.id) return INITIAL_MOCK_REVIEWS;
     return productReviewsMap[product.id] || INITIAL_MOCK_REVIEWS;
@@ -99,27 +96,22 @@ function ProductPage() {
     return { computedRating: computed, totalReviewsCount: count };
   }, [currentReviews]);
 
-  // FIXED: Filters ALL products to find matching categories (e.g., 'men') and shuffles 5 items randomly
   const randomizedCategoryProducts = useMemo(() => {
     if (!product || !product.category) return [];
     
     const pool = Array.isArray(liveRegistry) && liveRegistry.length > 0 ? liveRegistry : STATIC_PRODUCTS;
     
-    // 1. Filter by matching category group string, excluding the item currently open on screen
     const categoryMatches = pool.filter(
       (item) => item.category === product.category && item.id !== product.id
     );
 
-    // Fallback block: If the target category doesn't have enough entries yet, fetch from general pool
     const finalPool = categoryMatches.length >= 5 
       ? categoryMatches 
       : pool.filter((item) => item.id !== product.id);
 
-    // 2. Shuffle item indices randomly and extract exactly 5 slots
     return [...finalPool].sort(() => 0.6 - Math.random()).slice(0, 6);
   }, [product, liveRegistry]);
 
-  // FIXED EARLY EXIT LOADER: Intercepts component render cycle safely to display rolling spinner icon center-screen
   if (isLoading || !product || product.name === "Mood Clothings" || !product.id) {
     return (
       <div className="min-h-[70vh] w-full grid place-items-center bg-background">
@@ -153,7 +145,7 @@ function ProductPage() {
   };
 
   const handleWhatsAppRedirect = () => {
-    const phoneNumber = "2348000000000"; 
+    const phoneNumber = "2349065623779"; // Nigeria +234
     const message = encodeURIComponent(`Hi Mood Clothings, I am interested in purchasing the "${product.name}" (Color: ${color}, Size: ${size}). Could you assist me with more details?`);
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank", "noopener,noreferrer");
   };
@@ -163,15 +155,18 @@ function ProductPage() {
     : ["S", "M", "L", "XL"];
 
   return (
-    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 text-lg">
-      <Breadcrumbs
-        items={[
-          { label: "Home", to: "/" },
-          { label: product.category ? product.category[0].toUpperCase() + product.category.slice(1) : "Collection", to: "/shop/$gender", params: { gender: product.category || "women" } },
-          { label: product.sub ? product.sub[0].toUpperCase() + product.sub.slice(1) : "All", to: "/shop/$gender/$sub", params: { gender: product.category || "women", sub: product.sub || "all" } },
-          { label: product.name },
-        ]}
-      />
+    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 text-lg max-md:text-sm">
+      {/* Scaled-down Breadcrumbs structure wrapper container for mobile viewports */}
+      <div className="max-md:text-xs">
+        <Breadcrumbs
+          items={[
+            { label: "Home", to: "/" },
+            { label: product.category ? product.category[0].toUpperCase() + product.category.slice(1) : "Collection", to: "/shop/$gender", params: { gender: product.category || "women" } },
+            { label: product.sub ? product.sub[0].toUpperCase() + product.sub.slice(1) : "All", to: "/shop/$gender/$sub", params: { gender: product.category || "women", sub: product.sub || "all" } },
+            { label: product.name },
+          ]}
+        />
+      </div>
 
       <div className="mt-6 grid gap-8 md:grid-cols-2 lg:gap-12 items-start">
         <div className="flex flex-col gap-3">
@@ -188,7 +183,7 @@ function ProductPage() {
               <button
                 key={src}
                 onClick={() => setActiveImage(i)}
-                className={`h-24 w-20 overflow-hidden border transition-all ${activeImage === i ? "border-foreground scale-[1.02]" : "border-hairline hover:border-foreground"}`}
+                className={`h-24 w-20 max-md:h-16 max-md:w-12 overflow-hidden border transition-all ${activeImage === i ? "border-foreground scale-[1.02]" : "border-hairline hover:border-foreground"}`}
                 aria-label={`Image ${i + 1}`}
               >
                 <img src={src} alt="" className="h-full w-full object-cover" />
@@ -198,29 +193,29 @@ function ProductPage() {
         </div>
 
         <div>
-          <h1 className="font-display text-3xl md:text-4xl">{product.name}</h1>
+          <h1 className="font-display text-3xl md:text-4xl max-md:text-xl">{product.name}</h1>
           <div className="mt-3 flex items-center gap-3">
             <div className="flex items-center gap-0.5">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className={`h-4 w-4 ${i < Math.round(computedRating) ? "fill-foreground" : "text-hairline"}`} />
+                <Star key={i} className={`h-4 w-4 max-md:h-3 max-md:w-3 ${i < Math.round(computedRating) ? "fill-foreground" : "text-hairline"}`} />
               ))}
             </div>
-            <span className="text-lg text-muted-foreground">{computedRating.toFixed(1)} · {totalReviewsCount} reviews</span>
+            <span className="text-lg text-muted-foreground max-md:text-xs">{computedRating.toFixed(1)} · {totalReviewsCount} reviews</span>
           </div>
           
-          <div className="mt-5 font-display text-2xl font-semibold text-foreground font-mono">{formatNaira(product.price)}</div>
-          <p className="mt-6 text-lg leading-relaxed text-muted-foreground">{product.description}</p>
+          <div className="mt-5 font-display text-4xl font-semibold text-foreground font-mono max-md:text-2xl">{formatNaira(product.price)}</div>
+          <p className="mt-6 text-lg leading-relaxed text-muted-foreground max-md:text-sm max-md:mt-4">{product.description}</p>
 
           {/* Color Selector */}
-          <div className="mt-8">
-            <div className="text-lg uppercase tracking-widest text-muted-foreground">Color</div>
+          <div className="mt-8 max-md:mt-5">
+            <div className="text-lg uppercase tracking-widest text-muted-foreground max-md:text-xs">Color</div>
             <div className="mt-2 flex gap-2">
               {product.colors.map((c) => (
                 <button
                   key={c}
                   onClick={() => setColor(c)}
                   aria-label={`Color ${c}`}
-                  className={`h-9 w-9 rounded-full border-2 ${color === c ? "border-foreground" : "border-hairline"}`}
+                  className={`h-8 w-8 max-md:h-5 max-md:w-5 rounded-full border-1 ${color === c ? "border-foreground" : "border-hairline"}`}
                   style={{ backgroundColor: c }}
                 />
               ))}
@@ -228,8 +223,8 @@ function ProductPage() {
           </div>
 
           {/* Size Selector with Heading */}
-          <div className="mt-6">
-            <div className="text-lg uppercase tracking-widest text-muted-foreground">Select your size</div>
+          <div className="mt-6 max-md:mt-4">
+            <div className="text-lg uppercase tracking-widest text-muted-foreground max-md:text-xs">Select your size</div>
             <div className="mt-2 flex flex-wrap gap-2">
               {sizeOptionsToRender.map((sz: string) => {
                 const isSelected = size === sz;
@@ -238,7 +233,7 @@ function ProductPage() {
                     key={sz}
                     type="button"
                     onClick={() => setSize(sz)}
-                    className={`min-w-12 h-10 border text-lg uppercase tracking-wider transition-colors px-3 ${
+                    className={`min-w-10 h-10 max-md:min-w-9 max-md:h-8 border text-lg max-md:text-xs uppercase tracking-wider transition-colors px-3 ${
                       isSelected 
                         ? "border-foreground bg-foreground text-background font-medium" 
                         : "border-hairline hover:border-foreground text-foreground bg-transparent"
@@ -252,18 +247,18 @@ function ProductPage() {
           </div>
 
           {/* Core Action Layout Blocks */}
-          <div className="mt-8 flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center border border-hairline bg-background h-11 shrink-0">
-                <button type="button" className="grid h-11 w-11 place-items-center" onClick={() => setQty(Math.max(1, qty - 1))}><Minus className="h-4 w-4" /></button>
-                <span className="w-10 text-center text-lg tabular-nums font-mono">{qty}</span>
-                <button type="button" className="grid h-11 w-11 place-items-center" onClick={() => setQty(qty + 1)}><Plus className="h-4 w-4" /></button>
+          <div className="mt-8 flex flex-col gap-3 max-md:mt-6">
+            <div className="flex flex-wrap items-center gap-4 max-md:gap-2">
+              <div className="flex items-center border border-hairline bg-background h-11 max-md:h-9 shrink-0">
+                <button type="button" className="grid h-11 w-11 max-md:h-9 max-md:w-9 place-items-center" onClick={() => setQty(Math.max(1, qty - 1))}><Minus className="h-4 w-4 max-md:h-3 max-md:w-3" /></button>
+                <span className="w-10 text-center text-lg max-md:text-sm tabular-nums font-mono">{qty}</span>
+                <button type="button" className="grid h-11 w-11 max-md:h-9 max-md:w-9 place-items-center" onClick={() => setQty(qty + 1)}><Plus className="h-4 w-4 max-md:h-3 max-md:w-3" /></button>
               </div>
               
               <button
                 type="button"
                 onClick={() => addToCart(product.id, color, qty, size)}
-                className="flex-1 min-w-[200px] md:max-w-[320px] h-11 bg-foreground text-lg uppercase tracking-widest text-background transition-transform hover:scale-[1.01]"
+                className="flex-1 max-w-50 md:max-w-[300px] h-11 max-md:h-9 text-lg max-md:text-xs uppercase tracking-widest text-background bg-foreground transition-transform hover:scale-[1.01]"
               >
                 Add to Cart
               </button>
@@ -272,49 +267,49 @@ function ProductPage() {
                 type="button"
                 onClick={() => toggleWishlist(product.id)}
                 aria-label="Wishlist"
-                className="grid h-11 w-11 place-items-center border border-hairline hover:border-foreground bg-background shrink-0"
+                className="grid h-11 w-11 max-md:h-9 max-md:w-9 place-items-center border border-hairline hover:border-foreground bg-background shrink-0"
               >
-                <Heart className={`h-4 w-4 ${wished ? "fill-foreground" : ""}`} />
+                <Heart className={`h-4 w-4 max-md:h-3 w-3 ${wished ? "fill-foreground" : ""}`} />
               </button>
             </div>
 
             <button
               type="button"
               onClick={handleWhatsAppRedirect}
-              className="flex w-full md:max-w-[200px] h-11 items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba5a] text-white text-lg uppercase tracking-widest transition-transform hover:scale-[1.01]"
+              className="flex w-1/2 md:max-w-[200px] h-11 max-md:h-9 items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba5a] text-white text-lg max-md:text-xs uppercase tracking-widest transition-transform hover:scale-[1.01]"
             >
-              <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <svg className="h-5 w-5 fill-current max-md:h-4 max-md:w-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.713-1.457L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.413 9.863-9.849.002-2.634-1.023-5.11-2.89-6.98-1.866-1.868-4.343-2.899-6.977-2.9-5.439 0-9.861 4.413-9.864 9.852-.001 1.698.452 3.354 1.309 4.811L1.99 22.067l4.657-1.913zm11.514-7.53c-.307-.154-1.815-.896-2.097-.999-.281-.103-.485-.154-.689.154-.204.307-.792.999-.971 1.203-.178.204-.357.226-.664.072-1.246-.623-2.115-1.096-2.966-2.556-.226-.388.226-.361.648-1.203.072-.144.036-.271-.018-.378-.054-.107-.485-1.171-.664-1.603-.175-.42-.354-.362-.485-.369-.125-.007-.269-.008-.413-.008-.144 0-.378.054-.576.271-.198.216-.755.739-.755 1.8 0 1.062.773 2.087.88 2.23 1.1 1.487 2.47 2.288 3.93 2.848.348.134.696.214 1.056.276.36.062.688.048.947.009.289-.044.896-.367 1.023-.721.127-.354.127-.658.089-.721-.037-.063-.143-.103-.45-.258z"/>
               </svg>
               WhatsApp
             </button>
           </div>
 
-          <div className="mt-8 grid grid-cols-3 gap-4 text-sm uppercase tracking-widest text-muted-foreground border-t border-hairline pt-6">
-            <div className="flex flex-col items-start gap-2"><Truck className="h-5 w-5 text-foreground" /> Free shipping over ₦1,500</div>
-            <div className="flex flex-col items-start gap-2"><RefreshCcw className="h-5 w-5 text-foreground" /> 7-days returns</div>
-            <div className="flex flex-col items-start gap-2"><ShieldCheck className="h-5 w-5 text-foreground" /> Secure checkout</div>
+          <div className="mt-8 grid grid-cols-3 gap-4 text-sm max-md:text-[10px] uppercase tracking-widest text-muted-foreground border-t border-hairline pt-6 max-md:pt-4 max-md:mt-4">
+            <div className="flex flex-col items-start gap-2"><Truck className="h-5 w-5 max-md:h-4 max-md:w-4 text-foreground" /> Free shipping over ₦75,000</div>
+            <div className="flex flex-col items-start gap-2"><RefreshCcw className="h-5 w-5 max-md:h-4 max-md:w-4 text-foreground" /> 30-day returns</div>
+            <div className="flex flex-col items-start gap-2"><ShieldCheck className="h-5 w-5 max-md:h-4 max-md:w-4 text-foreground" /> Secure checkout</div>
           </div>
         </div>
       </div>
 
       {/* Reviews */}
-      <section className="mt-20">
-        <h2 className="font-display text-xl md:text-3xl">Ratings &amp; Reviews</h2>
-        <div className="mt-6 grid gap-6 md:grid-cols-[240px_1fr]">
+      <section className="mt-20 max-md:mt-12">
+        <h2 className="font-display text-2xl md:text-3xl max-md:text-base">Ratings &amp; Reviews</h2>
+        <div className="mt-6 grid gap-6 md:grid-cols-[240px_1fr] max-md:gap-4">
           <div className="flex flex-col gap-4">
-            <div className="border border-hairline p-6 text-center bg-background">
-              <div className="font-display text-4xl">{computedRating.toFixed(1)}</div>
+            <div className="border border-hairline p-6 max-md:p-4 text-center bg-background">
+              <div className="font-display text-5xl max-md:text-3xl">{computedRating.toFixed(1)}</div>
               <div className="mt-2 flex justify-center gap-0.5">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className={`h-5 w-5 ${i < Math.round(computedRating) ? "fill-foreground" : "text-hairline"}`} />
+                  <Star key={i} className={`h-5 w-5 max-md:h-3 max-md:w-3 ${i < Math.round(computedRating) ? "fill-foreground" : "text-hairline"}`} />
                 ))}
               </div>
-              <div className="mt-2 text-sm text-muted-foreground">{totalReviewsCount} verified reviews</div>
+              <div className="mt-2 text-lg max-md:text-xs text-muted-foreground">{totalReviewsCount} verified reviews</div>
             </div>
 
             <div className="border border-hairline p-4 bg-background">
-              <h3 className="text-sm uppercase tracking-widest text-foreground font-medium mb-3">Share your thoughts</h3>
+              <h3 className="text-lg max-md:text-xs uppercase tracking-widest text-foreground font-medium mb-3">Share your thoughts</h3>
               {user ? (
                 <form onSubmit={handleReviewSubmit} className="flex flex-col gap-3">
                   <div className="flex items-center gap-1">
@@ -330,7 +325,7 @@ function ProductPage() {
                           className="focus:outline-none"
                         >
                           <Star
-                            className={`h-5 w-5 transition-colors ${
+                            className={`h-5 w-5 max-md:h-3.5 max-md:w-3.5 transition-colors ${
                               ratingValue <= (hoveredRating ?? newRating)
                                 ? "fill-foreground text-foreground"
                                 : "text-hairline"
@@ -345,37 +340,37 @@ function ProductPage() {
                     onChange={(e) => setNewText(e.target.value)}
                     placeholder="Write your review here..."
                     rows={3}
-                    className="w-full border border-hairline p-2 text-lg bg-background placeholder:text-muted-foreground focus:outline-none focus:border-foreground resize-none"
+                    className="w-full border border-hairline p-2 text-lg max-md:text-xs bg-background placeholder:text-muted-foreground focus:outline-none focus:border-foreground resize-none"
                     required
                   />
                   <button
                     type="submit"
-                    className="w-full bg-foreground text-background py-2 text-lg uppercase tracking-widest hover:opacity-90 transition-opacity"
+                    className="w-full bg-foreground text-background py-2 text-lg max-md:text-xs uppercase tracking-widest hover:opacity-90 transition-opacity"
                   >
                     Submit Review
                   </button>
                 </form>
               ) : (
-                <p className="text-lg text-muted-foreground leading-relaxed">
+                <p className="text-lg max-md:text-xs text-muted-foreground leading-relaxed">
                   Please log in to leave a product rating and review.
                 </p>
               )}
             </div>
           </div>
 
-          <ul className="divide-y divide-[color:var(--hairline)] bg-background border border-hairline px-6 max-h-[500px] overflow-y-auto">
+          <ul className="divide-y divide-[color:var(--hairline)] bg-background border border-hairline px-6 max-md:px-4 max-h-[500px] overflow-y-auto">
             {currentReviews.map((r, index) => (
-              <li key={`${r.name}-${index}`} className="py-5 first:pt-6 last:pb-6">
+              <li key={`${r.name}-${index}`} className="py-5 first:pt-6 last:pb-6 max-md:py-3.5">
                 <div className="flex items-center gap-3">
-                  <span className="text-lg font-medium">{r.name}</span>
-                  <span className="text-lg uppercase tracking-widest text-muted-foreground">Verified buyer</span>
+                  <span className="text-lg max-md:text-xs font-medium">{r.name}</span>
+                  <span className="text-lg max-md:text-[10px] uppercase tracking-widest text-muted-foreground">Verified buyer</span>
                 </div>
                 <div className="mt-1 flex gap-0.5">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className={`h-4 w-4 ${i < r.rating ? "fill-foreground" : "text-hairline"}`} />
+                    <Star key={i} className={`h-4 w-4 max-md:h-3 max-md:w-3 ${i < r.rating ? "fill-foreground" : "text-hairline"}`} />
                   ))}
                 </div>
-                <p className="mt-2 text-lg text-muted-foreground">{r.text}</p>
+                <p className="mt-2 text-lg max-md:text-xs text-muted-foreground leading-normal">{r.text}</p>
               </li>
             ))}
           </ul>
@@ -383,8 +378,8 @@ function ProductPage() {
       </section>
 
       {/* Related Grid displaying exactly 5 shuffled products filtered by Category */}
-      <section className="mt-20">
-        <h2 className="mb-6 font-display text-2xl md:text-3xl">You may also like</h2>
+      <section className="mt-20 max-md:mt-12">
+        <h2 className="mb-6 font-display text-2xl md:text-3xl max-md:text-base max-md:mb-4">You may also like</h2>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-6 md:gap-6">
           {randomizedCategoryProducts.map((p) => (
             <ProductCard key={p.id} product={p} />

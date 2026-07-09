@@ -46,7 +46,7 @@ export function Header() {
             >
               <Menu className="h-6 w-6" />
             </button>
-            <nav className="hidden items-center gap-6 text-sm uppercase tracking-widest md:flex">
+            <nav className="hidden items-center gap-6 text-xs uppercase tracking-widest md:flex">
               <Link to="/" activeOptions={{ exact: true }} activeProps={{ className: "font-medium" }}>
                 Home
               </Link>

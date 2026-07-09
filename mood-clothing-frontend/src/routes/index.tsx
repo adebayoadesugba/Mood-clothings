@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpRight, Play, ChevronLeft, ChevronRight } from "lucide-react";
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { ProductCard } from "@/components/ProductCard";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import { PRODUCTS as STATIC_PRODUCTS, CATEGORIES, SUBCATEGORIES, type Product } from "@/lib/products";
@@ -10,11 +10,37 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
+// HERO VIDEO PLAYLIST: add, remove, or reorder video URLs here.
+// They play in this exact order, then loop back to the first one automatically, forever.
+const HERO_VIDEOS: string[] = [
+  "https://res.cloudinary.com/gam6ajgd/video/upload/v1783625924/MOOD_ADS_yd3ebt.mp4",
+  "https://res.cloudinary.com/gam6ajgd/video/upload/v1783623029/Change_call_now_to_SHOP_202607091944_dmexui.mp4",
+];
+
 const FILTERS = ["All", "New Arrival", "Best Seller", "Recommendation"] as const;
 
 function Home() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
   const carouselRef = useRef<HTMLDivElement>(null);
+
+  // HERO VIDEO PLAYLIST STATE: tracks which video is currently playing, advances on end, loops forever
+  const [heroVideoIndex, setHeroVideoIndex] = useState(0);
+  const heroVideoRef = useRef<HTMLVideoElement>(null);
+
+  const handleHeroVideoEnded = () => {
+    setHeroVideoIndex((prev) => (prev + 1) % HERO_VIDEOS.length);
+  };
+
+  // Ensures the new video source actually starts playing every time the index changes
+  useEffect(() => {
+    const videoEl = heroVideoRef.current;
+    if (videoEl) {
+      videoEl.load();
+      videoEl.play().catch(() => {
+        // Autoplay can be blocked by the browser in rare cases; fails silently and safely
+      });
+    }
+  }, [heroVideoIndex]);
   
   // Grab global synchronized tracking arrays and loader flags straight from your store context
   const { cart, recent, PRODUCTS: liveProducts, isLoading } = useStore(); 
@@ -69,42 +95,49 @@ function Home() {
   // FIXED GLOBAL INTERCEPTOR SKELETON: Displays a geometric rolling spinner ring while network request handles fetch payloads
   if (isLoading) {
     return (
-      <div className="min-h-[85vh] w-full grid place-items-center bg-background">
+      <div className="min-h-[85vh] w-full grid place-items-center bg-background lg:min-h-[85vh] ">
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 border-[3px] border-hairline border-t-foreground rounded-full animate-spin" />
-          <p className="text-lg uppercase tracking-widest text-muted-foreground font-mono">Welcome To Mood Clothings...</p>
+          <p className="text-sm uppercase tracking-widest text-muted-foreground font-mono lg:text-lg">Welcome To Mood Clothings...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-[1440px] px-4 md:px-8">
+    <div className="mx-auto max-w-[1440px] px-1 md:px-8">
       {/* Hero */}
       <section className="relative mt-4 overflow-hidden rounded-lg">
-        <img
-          src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1800&h=1000&fit=crop&auto=format&q=80"
-          alt="Woman in tailored coat"
+        {/* HERO VIDEO PLAYLIST: autoplays muted + inline (required for mobile autoplay), plays each
+            video in HERO_VIDEOS in order, then advances to the next on end via onEnded, looping forever. */}
+        <video
+          ref={heroVideoRef}
+          key={HERO_VIDEOS[heroVideoIndex]}
           className="h-[68vh] min-h-[420px] w-full object-cover md:h-[75vh]"
-          fetchPriority="high"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-foreground/50 via-foreground/20 to-transparent" />
-        <div className="absolute inset-0 flex items-end p-6 md:items-center md:p-16">
-          <div className="max-w-xl text-background">
-            <p className="mb-3 text-[11px] uppercase tracking-[0.3em] opacity-80">Autumn / Winter Edit</p>
-            <h1 className="font-display text-5xl leading-[1.05] md:text-7xl">
-              Shaping a new era of style and sophistication
-            </h1>
-            <p className="mt-4 max-w-md text-sm opacity-90">
-              Elevate your wardrobe and embrace your unique elegance with every click.
-            </p>
-            <Link
-              to="/collection"
-              className="mt-8 inline-flex items-center gap-2 border border-background/60 bg-background/10 px-6 py-3 text-xs uppercase tracking-widest backdrop-blur transition-transform hover:scale-[1.02]"
-            >
-              See Collection <ArrowUpRight className="h-4 w-4" />
-            </Link>
-          </div>
+          autoPlay
+          muted
+          playsInline
+          preload="auto"
+          onEnded={handleHeroVideoEnded}
+          aria-label="Mood Clothings promotional video"
+        >
+          <source src={HERO_VIDEOS[heroVideoIndex]} type="video/mp4" />
+        </video>
+
+        {/* DARK OVERLAY — tweak opacity/color here.
+            Currently a flat dark tint over the whole hero. Adjust "bg-foreground/60" (e.g. /40, /70)
+            to make it lighter or darker, or swap for a gradient like the old
+            "bg-gradient-to-r from-foreground/50 via-foreground/20 to-transparent" if preferred. */}
+        <div className="absolute inset-0 bg-foreground/60" />
+
+        {/* CTA — centered at the bottom of the hero on all screen sizes, no text/heading above it */}
+        <div className="absolute inset-x-0 bottom-6 flex justify-center px-4 md:bottom-10">
+          <Link
+            to="/collection"
+            className="inline-flex items-center gap-2 border border-background/60 bg-background/10 px-6 py-3 text-xs uppercase tracking-widest text-background backdrop-blur transition-transform hover:scale-[1.02]"
+          >
+            See Collection <ArrowUpRight className="h-4 w-4" />
+          </Link>
         </div>
       </section>
 
