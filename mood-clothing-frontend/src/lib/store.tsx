@@ -15,7 +15,7 @@ type StoreState = {
   searchOpen: boolean;
 };
 
-// EXPLICITLY TYPE EXPOSE FINDPRODUCT IN THE CONTEXT OBJECT INTERFACE
+// EXPLICITLY TYPE EXPOSE FIND PRODUCT IN THE CONTEXT OBJECT INTERFACE
 type Ctx = StoreState & {
   addToCart: (id: string, color?: string, qty?: number, size?: string) => void;
   removeFromCart: (id: string) => void;

@@ -43,7 +43,7 @@ export function LoginModal() {
     e.preventDefault();
     setLoading(true);
 
-    const BASE_AUTH_URL = "http://localhost:5000/api/auth";
+    const BASE_AUTH_URL = import.meta.env.VITE_API_URL + "/api/auth";
 
     try {
       if (isSignUp) {

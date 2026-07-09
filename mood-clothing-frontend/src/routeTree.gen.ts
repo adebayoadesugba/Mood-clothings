@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WishlistRouteImport } from './routes/wishlist'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as RichardClothingsRealAdminRouteImport } from './routes/richard-clothings-real-admin'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as NewArrivalsRouteImport } from './routes/new-arrivals'
 import { Route as HelpRouteImport } from './routes/help'
@@ -19,7 +20,6 @@ import { Route as CustomDesignRouteImport } from './routes/custom-design'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CollectionRouteImport } from './routes/collection'
 import { Route as CheckoutRouteImport } from './routes/checkout'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopGenderRouteImport } from './routes/shop.$gender'
@@ -36,6 +36,12 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RichardClothingsRealAdminRoute =
+  RichardClothingsRealAdminRouteImport.update({
+    id: '/richard-clothings-real-admin',
+    path: '/richard-clothings-real-admin',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -76,11 +82,6 @@ const CheckoutRoute = CheckoutRouteImport.update({
   path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -110,7 +111,6 @@ const ShopGenderSubRoute = ShopGenderSubRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin': typeof AdminRoute
   '/checkout': typeof CheckoutRoute
   '/collection': typeof CollectionRoute
   '/contact': typeof ContactRoute
@@ -119,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/help': typeof HelpRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/privacy': typeof PrivacyRoute
+  '/richard-clothings-real-admin': typeof RichardClothingsRealAdminRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wishlist': typeof WishlistRoute
   '/product/$id': typeof ProductIdRoute
@@ -128,7 +129,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin': typeof AdminRoute
   '/checkout': typeof CheckoutRoute
   '/collection': typeof CollectionRoute
   '/contact': typeof ContactRoute
@@ -137,6 +137,7 @@ export interface FileRoutesByTo {
   '/help': typeof HelpRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/privacy': typeof PrivacyRoute
+  '/richard-clothings-real-admin': typeof RichardClothingsRealAdminRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wishlist': typeof WishlistRoute
   '/product/$id': typeof ProductIdRoute
@@ -147,7 +148,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin': typeof AdminRoute
   '/checkout': typeof CheckoutRoute
   '/collection': typeof CollectionRoute
   '/contact': typeof ContactRoute
@@ -156,6 +156,7 @@ export interface FileRoutesById {
   '/help': typeof HelpRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/privacy': typeof PrivacyRoute
+  '/richard-clothings-real-admin': typeof RichardClothingsRealAdminRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wishlist': typeof WishlistRoute
   '/product/$id': typeof ProductIdRoute
@@ -167,7 +168,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
-    | '/admin'
     | '/checkout'
     | '/collection'
     | '/contact'
@@ -176,6 +176,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/new-arrivals'
     | '/privacy'
+    | '/richard-clothings-real-admin'
     | '/sitemap.xml'
     | '/wishlist'
     | '/product/$id'
@@ -185,7 +186,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
-    | '/admin'
     | '/checkout'
     | '/collection'
     | '/contact'
@@ -194,6 +194,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/new-arrivals'
     | '/privacy'
+    | '/richard-clothings-real-admin'
     | '/sitemap.xml'
     | '/wishlist'
     | '/product/$id'
@@ -203,7 +204,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/about'
-    | '/admin'
     | '/checkout'
     | '/collection'
     | '/contact'
@@ -212,6 +212,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/new-arrivals'
     | '/privacy'
+    | '/richard-clothings-real-admin'
     | '/sitemap.xml'
     | '/wishlist'
     | '/product/$id'
@@ -222,7 +223,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  AdminRoute: typeof AdminRoute
   CheckoutRoute: typeof CheckoutRoute
   CollectionRoute: typeof CollectionRoute
   ContactRoute: typeof ContactRoute
@@ -231,6 +231,7 @@ export interface RootRouteChildren {
   HelpRoute: typeof HelpRoute
   NewArrivalsRoute: typeof NewArrivalsRoute
   PrivacyRoute: typeof PrivacyRoute
+  RichardClothingsRealAdminRoute: typeof RichardClothingsRealAdminRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WishlistRoute: typeof WishlistRoute
   ProductIdRoute: typeof ProductIdRoute
@@ -251,6 +252,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/richard-clothings-real-admin': {
+      id: '/richard-clothings-real-admin'
+      path: '/richard-clothings-real-admin'
+      fullPath: '/richard-clothings-real-admin'
+      preLoaderRoute: typeof RichardClothingsRealAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -309,13 +317,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -369,7 +370,6 @@ const ShopGenderRouteWithChildren = ShopGenderRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  AdminRoute: AdminRoute,
   CheckoutRoute: CheckoutRoute,
   CollectionRoute: CollectionRoute,
   ContactRoute: ContactRoute,
@@ -378,6 +378,7 @@ const rootRouteChildren: RootRouteChildren = {
   HelpRoute: HelpRoute,
   NewArrivalsRoute: NewArrivalsRoute,
   PrivacyRoute: PrivacyRoute,
+  RichardClothingsRealAdminRoute: RichardClothingsRealAdminRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WishlistRoute: WishlistRoute,
   ProductIdRoute: ProductIdRoute,

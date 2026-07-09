@@ -5,18 +5,18 @@ import { PRODUCTS, CATEGORIES, SUBCATEGORIES, type Product, type Category, type 
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/admin")({
+export const Route = createFileRoute("/richard-clothings-real-admin")({
   head: () => ({
     meta: [
-      { title: "Admin Console — Moon Clothings" },
-      { name: "description", content: "Internal Moon Clothings operations console." },
+      { title: "Admin Console — Mood Clothings" },
+      { name: "description", content: "Internal Mood Clothings operations console." },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
   component: AdminPage,
 });
 
-const ADMIN_KEY = "moon-clothings-admin-v1";
+const ADMIN_KEY = "mood-clothings-admin-v1";
 
 type AdminSession = { email: string; token: string } | null; 
 type Tab = "products" | "orders" | "customers" | "designs";
@@ -144,8 +144,8 @@ function AdminPage() {
   }, []);
 
   const login = async (email: string, pass: string) => {
-    const AUTH_API_URL = "http://localhost:5000/api/auth/login";
-    
+    const AUTH_API_URL = `${import.meta.env.VITE_API_URL}/api/auth/login`;
+
     try {
       const res = await fetch(AUTH_API_URL, {
         method: "POST",
@@ -203,7 +203,7 @@ function AdminPage() {
       <div className="flex h-full">
         <aside className="hidden h-full w-60 shrink-0 border-r border-hairline bg-background md:block relative">
           <div className="border-b border-hairline p-6">
-            <Link to="/" className="font-display text-xl">Moon Clothings</Link>
+            <Link to="/" className="font-display text-xl">Mood Clothings</Link>
             <p className="mt-1 text-lg uppercase tracking-widest text-muted-foreground">Admin Console</p>
           </div>
           <nav className="p-3">
@@ -299,7 +299,7 @@ function emptyProduct(): AdminProduct {
 function ProductsModule({ sessionToken, products, setProducts, refreshInventory }: { sessionToken: string; products: AdminProduct[]; setProducts: (p: AdminProduct[]) => void; refreshInventory: () => Promise<void> }) {
   const [editing, setEditing] = useState<AdminProduct | null>(null);
   const [loading, setLoading] = useState(true);
-  const API_BASE_URL = "http://localhost:5000/api/products"; 
+  const API_BASE_URL = `${import.meta.env.VITE_API_URL}/api/products`; 
 
   const getAuthHeaders = () => {
     return {
@@ -761,7 +761,7 @@ function OrdersModule({ sessionToken, orders, setOrders }: { sessionToken: strin
   const [tab, setTab] = useState<"all" | "pending" | "settled">("all");
   const [openId, setOpenId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const API_ORDERS_URL = "http://localhost:5000/api/orders";
+  const API_ORDERS_URL = `${import.meta.env.VITE_API_URL}/api/orders`;
 
   const getHeaders = () => ({
     "Content-Type": "application/json",
@@ -975,7 +975,7 @@ function DesignsModule({ sessionToken, designs, setDesigns }: { sessionToken: st
   const [openId, setOpenId] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const API_DESIGNS_URL = "http://localhost:5000/api/custom-designs";
+  const API_DESIGNS_URL = `${import.meta.env.VITE_API_URL}/api/custom-designs`;
 
   useEffect(() => {
     const fetchLiveDesigns = async () => {

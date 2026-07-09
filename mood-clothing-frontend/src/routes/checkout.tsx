@@ -74,7 +74,7 @@ function Checkout() {
 
       // 2. DISPATCH STRUCTURED PAYLOAD TO MERN BACKEND ENDPOINT
       const token = localStorage.getItem("mood-clothings-auth-token");
-      const res = await fetch("http://localhost:5000/api/orders", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -103,7 +103,6 @@ function Checkout() {
 
       // 3. SUCCESS PIPELINE: SWAP VISUAL STATES & CLEAN STORAGE
       setIsOrdered(true);
-      const tokenSessionSave = localStorage.getItem(ADMIN_KEY); 
       toast.success("Order logged in database successfully!");
       
       localStorage.removeItem("moon clothings-store-v1");
@@ -132,7 +131,7 @@ function Checkout() {
       console.error("Database order submission failed:", err);
       toast.error(err.message || "Failed to finalize transaction with database server.");
     } finally {
-      setLoading(false);
+      loading && setLoading(false);
     }
   };
 

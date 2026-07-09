@@ -89,7 +89,7 @@ function CustomDesign() {
     try {
       const token = localStorage.getItem("mood-clothings-auth-token");
       
-      const res = await fetch("http://localhost:5000/api/custom-designs", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/custom-designs`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
