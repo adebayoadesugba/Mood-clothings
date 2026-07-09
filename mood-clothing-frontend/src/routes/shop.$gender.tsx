@@ -83,7 +83,7 @@ function ShopGender() {
         <Outlet />
       ) : (
         /* Render the default parent catalog grid view only when sitting exactly on the "All" path */
-        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-5">
+        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 lg:grid-cols-6">
           {products.map((p) => <ProductCard key={p.id} product={p} />)}
           {products.length === 0 && <p className="col-span-full text-sm text-muted-foreground">No products in this collection yet.</p>}
         </div>

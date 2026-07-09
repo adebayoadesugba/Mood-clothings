@@ -34,7 +34,7 @@ function PrivacyPage() {
         <ul className="mt-3 list-disc space-y-2 pl-5">
           <li><strong>Account data:</strong> name, email, phone number, shipping and billing addresses.</li>
           <li><strong>Order data:</strong> items purchased, order value, delivery preferences.</li>
-          <li><strong>Payment data:</strong> processed securely by Stripe — we never store your full card number.</li>
+          <li><strong>Payment data:</strong> processed securely by Paypal we never store your full card number.</li>
           <li><strong>Usage data:</strong> pages viewed, products browsed, device and browser information.</li>
         </ul>
 
@@ -50,8 +50,8 @@ function PrivacyPage() {
 
         <h2 className="mt-10 font-display text-2xl">3. Sharing your information</h2>
         <p className="mt-3">
-          We only share personal data with service providers who help us run the store — payment
-          processors, shipping carriers, email tools, and analytics providers — under strict
+          We only share personal data with service providers who help us run the store payment
+          processors, shipping carriers, email tools, and analytics providers under strict
           confidentiality agreements. We do not sell your personal data.
         </p>
 
@@ -71,13 +71,13 @@ function PrivacyPage() {
         <h2 className="mt-10 font-display text-2xl">6. Your rights</h2>
         <p className="mt-3">
           You may request access, correction, or deletion of your personal data, or object to certain
-          processing. Contact us at <a href="mailto:privacy@glamora.shop">privacy@glamora.shop</a>.
+          processing. Contact us at <a href="mailto:info@moodclothings.com">info@moodclothings.com</a>.
         </p>
 
         <h2 className="mt-10 font-display text-2xl">7. Security</h2>
         <p className="mt-3">
           We use industry-standard safeguards including TLS encryption, tokenised payments, and access
-          controls. No system is completely secure — please use a strong, unique password for your account.
+          controls. No system is completely secure please use a strong, unique password for your account.
         </p>
 
         <h2 className="mt-10 font-display text-2xl">8. Changes to this policy</h2>
@@ -88,8 +88,8 @@ function PrivacyPage() {
 
         <h2 className="mt-10 font-display text-2xl">9. Contact</h2>
         <p className="mt-3">
-          Questions? Email <a href="mailto:privacy@moodclothings.shop">privacy@moodclothings.shop</a> or write to
-          Mood Clothings, 14 Elegushi Way, Lekki, Lagos, Nigeria.
+          Questions? Email <a href="mailto:info@moodclothings.com">info@moodclothings.com</a> or write to
+          Mood Clothings, 48 Ogunlana Drive, Surulere, Lagos, Nigeria.
         </p>
       </article>
     </div>

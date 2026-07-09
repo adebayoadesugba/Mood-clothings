@@ -45,6 +45,9 @@ function ContactPage() {
             <a href="mailto:info@moodclothings.com" className="mt-1 block">info@moodclothings.com</a>
           </div>
           <div>
+            <a href="mailto:sales@moodclothings.com" className="mt-1 block">sales@moodclothings.com</a>
+          </div>
+          <div>
             <div className="text-lg uppercase tracking-widest text-muted-foreground">Phone</div>
             <a href="tel:+2349065623779" className="mt-1 block">+234 906 562 3779</a>
           </div>
