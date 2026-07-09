@@ -10,10 +10,10 @@ import { useStore } from "@/lib/store";
 export const Route = createFileRoute("/new-arrivals")({
   head: () => ({
     meta: [
-      { title: "New Arrivals — The Latest 40 Drops at Glamora" },
-      { name: "description", content: "The 40 newest pieces at Glamora, refreshed as new drops arrive. Shop just-landed jeans, tops, joggers, polos, shirts, and accessories before they're gone." },
-      { property: "og:title", content: "New Arrivals — Glamora" },
-      { property: "og:description", content: "The 40 newest Glamora drops — updated the moment new pieces land." },
+      { title: "New Arrivals — The Latest 40 Drops at Mood Clothings" },
+      { name: "description", content: "The 40 newest pieces at Mood Clothings, refreshed as new drops arrive. Shop just-landed jeans, tops, joggers, polos, shirts, and accessories before they're gone." },
+      { property: "og:title", content: "New Arrivals — Mood Clothings" },
+      { property: "og:description", content: "The 40 newest Mood Clothings drops updated the moment new pieces land." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "/new-arrivals" },
     ],
@@ -24,8 +24,8 @@ export const Route = createFileRoute("/new-arrivals")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "CollectionPage",
-          name: "New Arrivals — Glamora",
-          description: "The 40 newest Glamora drops.",
+          name: "New Arrivals Mood Clothings",
+          description: "The 40 newest Mood Clothings drops.",
           url: "/new-arrivals",
         }),
       },
@@ -34,14 +34,14 @@ export const Route = createFileRoute("/new-arrivals")({
   component: NewArrivalsPage,
 });
 
-const MAX = 40;
+const MAX = 42;
 
 function NewArrivalsPage() {
   // Grab live database products right from global context along with loader flag
   const { PRODUCTS: liveRegistry, isLoading } = useStore();
 
   // Rank: pieces flagged "New" first, then everything else in catalog order.
-  // Cap at 40 so older items are pushed out as new ones are added.
+  // Cap at 42 so older items are pushed out as new ones are added.
   const items = useMemo(() => {
     const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
     
@@ -75,7 +75,7 @@ function NewArrivalsPage() {
           <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">Just Landed</p>
           <h1 className="mt-2 font-display text-4xl md:text-6xl">New Arrivals</h1>
           <p className="mt-3 max-w-xl text-sm text-muted-foreground">
-            The latest {MAX} pieces to hit the studio floor. This edit refreshes automatically — as new drops arrive, older ones make room.
+            The latest {MAX} pieces to hit the studio floor. This edit refreshes automatically as new drops arrive.
           </p>
         </div>
         <span className="text-xs uppercase tracking-widest text-muted-foreground">
@@ -83,7 +83,7 @@ function NewArrivalsPage() {
         </span>
       </header>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
+      <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 lg:grid-cols-6">
         {items.map((p) => <ProductCard key={p.id} product={p} />)}
         {items.length === 0 && (
           <p className="col-span-full text-sm text-muted-foreground">New pieces will appear here soon.</p>

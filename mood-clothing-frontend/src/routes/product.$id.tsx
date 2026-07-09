@@ -208,7 +208,7 @@ function ProductPage() {
             <span className="text-lg text-muted-foreground">{computedRating.toFixed(1)} · {totalReviewsCount} reviews</span>
           </div>
           
-          <div className="mt-5 font-display text-4xl font-semibold text-foreground font-mono">{formatNaira(product.price)}</div>
+          <div className="mt-5 font-display text-2xl font-semibold text-foreground font-mono">{formatNaira(product.price)}</div>
           <p className="mt-6 text-lg leading-relaxed text-muted-foreground">{product.description}</p>
 
           {/* Color Selector */}
@@ -290,7 +290,7 @@ function ProductPage() {
             </button>
           </div>
 
-          <div className="mt-8 grid grid-cols-3 gap-4 text-lg uppercase tracking-widest text-muted-foreground border-t border-hairline pt-6">
+          <div className="mt-8 grid grid-cols-3 gap-4 text-sm uppercase tracking-widest text-muted-foreground border-t border-hairline pt-6">
             <div className="flex flex-col items-start gap-2"><Truck className="h-5 w-5 text-foreground" /> Free shipping over ₦1,500</div>
             <div className="flex flex-col items-start gap-2"><RefreshCcw className="h-5 w-5 text-foreground" /> 7-days returns</div>
             <div className="flex flex-col items-start gap-2"><ShieldCheck className="h-5 w-5 text-foreground" /> Secure checkout</div>
@@ -300,21 +300,21 @@ function ProductPage() {
 
       {/* Reviews */}
       <section className="mt-20">
-        <h2 className="font-display text-2xl md:text-3xl">Ratings &amp; Reviews</h2>
+        <h2 className="font-display text-xl md:text-3xl">Ratings &amp; Reviews</h2>
         <div className="mt-6 grid gap-6 md:grid-cols-[240px_1fr]">
           <div className="flex flex-col gap-4">
             <div className="border border-hairline p-6 text-center bg-background">
-              <div className="font-display text-5xl">{computedRating.toFixed(1)}</div>
+              <div className="font-display text-4xl">{computedRating.toFixed(1)}</div>
               <div className="mt-2 flex justify-center gap-0.5">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className={`h-5 w-5 ${i < Math.round(computedRating) ? "fill-foreground" : "text-hairline"}`} />
                 ))}
               </div>
-              <div className="mt-2 text-lg text-muted-foreground">{totalReviewsCount} verified reviews</div>
+              <div className="mt-2 text-sm text-muted-foreground">{totalReviewsCount} verified reviews</div>
             </div>
 
             <div className="border border-hairline p-4 bg-background">
-              <h3 className="text-lg uppercase tracking-widest text-foreground font-medium mb-3">Share your thoughts</h3>
+              <h3 className="text-sm uppercase tracking-widest text-foreground font-medium mb-3">Share your thoughts</h3>
               {user ? (
                 <form onSubmit={handleReviewSubmit} className="flex flex-col gap-3">
                   <div className="flex items-center gap-1">

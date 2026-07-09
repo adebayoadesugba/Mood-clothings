@@ -15,13 +15,13 @@ export const Route = createFileRoute("/faq")({
 });
 
 const FAQS: { q: string; a: string }[] = [
-  { q: "How long does shipping take?", a: "Domestic orders arrive within 2–4 business days. International orders take 5–10 business days depending on destination and customs clearance." },
-  { q: "What is your returns policy?", a: "Unworn items with original tags can be returned within 14 days of delivery for a full refund. Sale items are final." },
-  { q: "How do I choose the right size?", a: "Each product page includes a size guide with detailed measurements. If you're between sizes, we recommend sizing up for a relaxed fit." },
-  { q: "Do you ship internationally?", a: "Yes — we ship to 40+ countries. Duties and taxes are calculated at checkout so there are no surprises on delivery." },
-  { q: "What payment methods do you accept?", a: "We accept all major credit and debit cards via Stripe. Additional local methods may appear based on your region." },
+  { q: "How long does shipping take?", a: "Domestic orders arrive within 2–4 business days. Depending on destination and customs clearance." },
+  { q: "What is your returns policy?", a: "Unworn items with original tags can be returned within 7 days of delivery for a full refund. Sale items are final." },
+  { q: "How do I choose the right size?", a: "Each product page includes a size guide S, M, L, XL and you can also reach out to us on WhatsApp for detailed measurements. If you're between sizes, we recommend sizing up for a relaxed fit." },
+  { q: "Do you ship To Other States?", a: "Yes we ship to All the States. Duties and taxes are calculated at checkout so there are no surprises on delivery." },
+  { q: "What payment methods do you accept?", a: "We accept all major credit and debit cards via Paystack. Additional local methods may appear based on your region." },
   { q: "Can I request a custom design?", a: "Yes. Head to the Custom Design page to upload a brief and reference images. Our atelier team will respond within two business days with a quote and timeline." },
-  { q: "How do I contact customer care?", a: "Email care@moodclothings.shop, call +234 807 845 7247, or tap the WhatsApp button at the bottom-right of any page." },
+  { q: "How do I contact customer care?", a: "Email: info@moodclothings.com, call +234 906 562 3779, or tap the WhatsApp button at the bottom-right of any page." },
 ];
 
 function FaqPage() {

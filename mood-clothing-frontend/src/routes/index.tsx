@@ -36,8 +36,8 @@ function Home() {
       list = list.filter((p: Product) => p.rating >= 4.7);
     }
     
-    // ENFORCES THE MAXIMUM LIMIT OF 12 ITEMS ONLY
-    return list.slice(0, 15);
+    // ENFORCES THE MAXIMUM LIMIT OF 18 ITEMS ONLY
+    return list.slice(0, 18);
   }, [filter, combinedProducts]);
 
   const scroll = (direction: "left" | "right") => {
@@ -50,7 +50,7 @@ function Home() {
     }
   };
 
-  // Generates an automated randomized array selection loop of exactly 10 items on fresh layout shifts
+  // Generates an automated randomized array selection loop of exactly 12 items on fresh layout shifts
   const randomShowcaseProducts = useMemo(() => {
     if (!combinedProducts || combinedProducts.length === 0) return [];
     const shufflableCopy = [...combinedProducts];
@@ -63,7 +63,7 @@ function Home() {
       shufflableCopy[j] = temp;
     }
     
-    return shufflableCopy.slice(0, 10);
+    return shufflableCopy.slice(0, 12); // Return exactly 12 random products for the showcase grid
   }, [combinedProducts]);
 
   // FIXED GLOBAL INTERCEPTOR SKELETON: Displays a geometric rolling spinner ring while network request handles fetch payloads
@@ -136,7 +136,7 @@ function Home() {
         </div>
         
         {/* Dynamic unified grid layout handles sorting and layouts cleanly */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 lg:grid-cols-6">
           {featured.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
 
@@ -231,7 +231,7 @@ function Home() {
           <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Freshly rotated items from the atelier console</p>
         </div>
         
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 lg:grid-cols-6">
           {randomShowcaseProducts.map((p) => (
             <ProductCard key={p.id || p._id} product={p} />
           ))}

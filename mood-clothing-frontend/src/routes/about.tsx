@@ -22,7 +22,7 @@ function AboutPage() {
         <h1 className="mt-3 font-display text-5xl leading-[1.05] md:text-6xl">Crafted for the modern wardrobe.</h1>
         <p className="mt-6 text-base text-muted-foreground md:text-lg">
           Mood Clothings is a contemporary fashion house dedicated to editorial silhouettes and refined
-          essentials. We design pieces that live beyond seasons — considered, well-made, and
+          essentials. We design pieces that live beyond seasons considered, well-made, and
           effortless to wear.
         </p>
       </header>
@@ -46,7 +46,7 @@ function AboutPage() {
           <h2 className="font-display text-2xl">Community</h2>
           <p className="mt-3 text-xl text-muted-foreground">
             Mood Clothings is worn by a global community of creatives, professionals, and families. We build
-            for real lives — from studio to weekend — with a warm, personal service to match.
+            for real lives from studio to weekend with a warm, personal service to match.
           </p>
         </div>
       </section>
@@ -54,9 +54,9 @@ function AboutPage() {
       <section className="mt-20 hairline-t pt-10">
         <div className="grid gap-6 md:grid-cols-4">
           {[
-            { k: "2018", v: "Founded in Lagos" },
-            { k: "40+", v: "Countries shipped" },
-            { k: "18k", v: "Garments crafted" },
+            { k: "2026", v: "Founded in Lagos" },
+            { k: "All", v: "States Across Nigeria" },
+            { k: "5k", v: "Wardrobe pieces crafted" },
             { k: "4.9", v: "Customer rating" },
           ].map((s) => (
             <div key={s.k}>

@@ -9,7 +9,7 @@ export const Route = createFileRoute("/contact")({
       { title: "Contact Us — Mood Clothings" },
       { name: "description", content: "Get in touch with Mood Clothings. Reach our client care team via email, phone, or WhatsApp — we respond within one business day." },
       { property: "og:title", content: "Contact Us — Mood Clothings" },
-      { property: "og:description", content: "We're here to help — reach the Mood Clothings team." },
+      { property: "og:description", content: "We're here to help reach the Mood Clothings team." },
     ],
   }),
   component: ContactPage,
@@ -42,25 +42,25 @@ function ContactPage() {
         <aside className="space-y-6 text-lg">
           <div>
             <div className="text-lg uppercase tracking-widest text-muted-foreground">Email</div>
-            <a href="mailto:care@moodclothings.shop" className="mt-1 block">care@moodclothings.shop</a>
+            <a href="mailto:info@moodclothings.com" className="mt-1 block">info@moodclothings.com</a>
           </div>
           <div>
             <div className="text-lg uppercase tracking-widest text-muted-foreground">Phone</div>
-            <a href="tel:+2348078457247" className="mt-1 block">+234 807 845 7247</a>
+            <a href="tel:+2349065623779" className="mt-1 block">+234 906 562 3779</a>
           </div>
           <div>
             <div className="text-lg uppercase tracking-widest text-muted-foreground">WhatsApp</div>
-            <a href="https://wa.me/2348078457247" target="_blank" rel="noreferrer" className="mt-1 block">
+            <a href="https://wa.me/2349065623779" target="_blank" rel="noreferrer" className="mt-1 block">
               Chat with us
             </a>
           </div>
           <div>
-            <div className="text-lg uppercase tracking-widest text-muted-foreground">Studio</div>
-            <p className="mt-1">14 Elegushi Way<br />Lekki, Lagos<br />Nigeria</p>
+            <div className="text-lg uppercase tracking-widest text-muted-foreground">Location</div>
+            <p className="mt-1">48 Ogunlana Drive,<br /> Surulere, Lagos 100242<br />Nigeria</p>
           </div>
           <div>
             <div className="text-lg uppercase tracking-widest text-muted-foreground">Hours</div>
-            <p className="mt-1">Mon–Fri · 9:00–18:00 WAT<br />Sat · 10:00–15:00 WAT</p>
+            <p className="mt-1">Mon–Fri · 8:00–18:00 WAT<br />Sat-Sun · 10:00–18:00 WAT</p>
           </div>
         </aside>
 

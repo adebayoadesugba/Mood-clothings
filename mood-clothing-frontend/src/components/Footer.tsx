@@ -34,10 +34,10 @@ export function Footer() {
         <div>
           <h4 className="mb-4 text-xs uppercase tracking-widest">Social Media</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li><a href="#">Instagram</a></li>
+            <li><a href="⁠@https://www.instagram.com/moodclothings/">Instagram</a></li>
             <li><a href="#">TikTok</a></li>
-            <li><a href="#">Facebook</a></li>
-            <li><a href="#">Youtube</a></li>
+            <li><a href="https://www.facebook.com/people/Mood-Clothings/100067132988739/#">Facebook</a></li>
+            
           </ul>
         </div>
       </div>

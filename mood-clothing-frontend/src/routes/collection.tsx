@@ -9,10 +9,10 @@ import { useStore } from "@/lib/store";
 export const Route = createFileRoute("/collection")({
   head: () => ({
     meta: [
-      { title: "The Collection — Shop Every Style at Glamora" },
-      { name: "description", content: "Browse the full Glamora collection — new arrivals, best sellers, and timeless essentials across Men, Women, and Kids. Jeans, tops, joggers, polos, shirts, and accessories in one place." },
-      { property: "og:title", content: "The Collection — Glamora" },
-      { property: "og:description", content: "Every Glamora piece in one place — new, best-selling, and classic." },
+      { title: "The Collection — Shop Every Style at Mood Clothings" },
+      { name: "description", content: "Browse the full Mood Clothings collection new arrivals, best sellers, and timeless essentials across Men, Women, and Kids. Jeans, tops, joggers, polo, shirts, and accessories in one place." },
+      { property: "og:title", content: "The Collection — Mood Clothings" },
+      { property: "og:description", content: "Every Mood Clothings piece in one place new, best-selling, and classic." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "/collection" },
     ],
@@ -23,8 +23,8 @@ export const Route = createFileRoute("/collection")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "CollectionPage",
-          name: "The Glamora Collection",
-          description: "Every Glamora piece — new arrivals, best sellers, and classics across Men, Women, and Kids.",
+          name: "The Mood Clothings Collection",
+          description: "Every Mood Clothings piece new arrivals, best sellers, and classics across Men, Women, and Kids.",
           url: "/collection",
         }),
       },
@@ -110,7 +110,7 @@ function CollectionPage() {
         <div>
           <h1 className="font-display text-4xl md:text-6xl">The Collection</h1>
           <p className="mt-3 max-w-xl text-sm text-muted-foreground">
-            Every Mood Clothings piece in one place — new arrivals, best sellers, and everyday classics across every category.
+            Every Mood Clothings piece in one place new arrivals, best sellers, and everyday classics across every category.
           </p>
         </div>
         <span className="text-xs uppercase tracking-widest text-muted-foreground">{items.length} items</span>
@@ -138,7 +138,7 @@ function CollectionPage() {
         </FilterRow>
       </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
+      <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 lg:grid-cols-6">
         {items.map((p) => <ProductCard key={p.id} product={p} />)}
         {items.length === 0 && (
           <p className="col-span-full text-sm text-muted-foreground">No items match those filters yet.</p>

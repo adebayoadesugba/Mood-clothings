@@ -10,7 +10,7 @@ export const Route = createFileRoute("/shop/$gender")({
   head: ({ params }) => ({
     meta: [
       { title: `${cap(params.gender)} — Mood Clothings` },
-      { name: "description", content: `Shop the latest ${params.gender} collection from Mood Clothings — jeans, tops, joggers, polos, shirts, and accessories.` },
+      { name: "description", content: `Shop the latest ${params.gender} collection from Mood Clothings — jeans, polo tops, joggers, polo gowns, shirts, and accessories.` },
       { property: "og:title", content: `${cap(params.gender)} — Mood Clothings` },
     ],
   }),
@@ -83,7 +83,7 @@ function ShopGender() {
         <Outlet />
       ) : (
         /* Render the default parent catalog grid view only when sitting exactly on the "All" path */
-        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
+        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-5">
           {products.map((p) => <ProductCard key={p.id} product={p} />)}
           {products.length === 0 && <p className="col-span-full text-sm text-muted-foreground">No products in this collection yet.</p>}
         </div>
