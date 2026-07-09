@@ -67,7 +67,7 @@ function WishlistPage() {
         </div>
       ) : (
         /* Authenticated Wishlist Grid View */
-        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 lg:grid-cols-4">
+        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 lg:grid-cols-6">
           {items.map((p, idx) => <ProductCard key={`${p.id}-${idx}`} product={p} />)}
         </div>
       )}

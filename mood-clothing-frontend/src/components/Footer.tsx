@@ -27,7 +27,6 @@ export function Footer() {
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li><Link to="/faq">FAQ</Link></li>
             <li><Link to="/help">Help &amp; Support</Link></li>
-            <li><Link to="/billing">Billing Cycle</Link></li>
             <li><Link to="/privacy">Privacy Policy</Link></li>
           </ul>
         </div>
