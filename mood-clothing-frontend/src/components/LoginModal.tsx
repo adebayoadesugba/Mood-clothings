@@ -14,6 +14,12 @@ export function LoginModal() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // FORGOT PASSWORD FLOW STATE: toggles a separate mini-form in place of the sign in/up form
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+
   useEffect(() => {
     document.body.style.overflow = loginOpen ? "hidden" : "";
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeLogin(); };
@@ -30,11 +36,63 @@ export function LoginModal() {
     }
   }, [user]);
 
+  // RESET FORGOT-PASSWORD MINI-FORM whenever the modal closes or the user leaves that view
+  useEffect(() => {
+    if (!loginOpen) {
+      setForgotMode(false);
+      setForgotEmail("");
+      setForgotSent(false);
+    }
+  }, [loginOpen]);
+
   const handleGoogleSignIn = () => {
     if ((window as any).google?.accounts?.id) {
       (window as any).google.accounts.id.prompt();
     } else {
       toast.error("Google authentication client is initializing. Please try again.");
+    }
+  };
+
+  // FORGOT PASSWORD SUBMIT HANDLER: tells the user clearly if no account exists vs. email sent
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      toast.error("Please enter your email address.");
+      return;
+    }
+
+    setForgotLoading(true);
+    const BASE_AUTH_URL = import.meta.env.VITE_API_URL + "/api/auth";
+
+    try {
+      const res = await fetch(`${BASE_AUTH_URL}/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail.trim().toLowerCase() }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        // Backend returns a 404 with this exact message when no account exists for the email
+        if (res.status === 404) {
+          toast.error(data.message || "No account found with this email. Please sign up instead.");
+          // Send them straight into the sign-up form so they can act on it immediately
+          setForgotMode(false);
+          setIsSignUp(true);
+          setForm((f) => ({ ...f, email: forgotEmail.trim().toLowerCase() }));
+          return;
+        }
+        throw new Error(data.message || "Unable to send reset email. Please try again.");
+      }
+
+      setForgotSent(true);
+      toast.success("Check your inbox for a password reset link.");
+    } catch (err: any) {
+      console.error("Forgot password request failed:", err);
+      toast.error(err.message || "Unable to complete request. Please verify server connection.");
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -161,6 +219,59 @@ export function LoginModal() {
               </button>
             </div>
           </div>
+        ) : forgotMode ? (
+          /* ───────────────── FORGOT PASSWORD MINI-FORM ───────────────── */
+          <div>
+            <h2 className="font-display text-3xl">Reset your password</h2>
+
+            {forgotSent ? (
+              <div className="mt-6">
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  If an account exists for <span className="text-foreground">{forgotEmail}</span>, a password reset link has been sent.
+                  Check your inbox (and spam folder) — the link expires in 30 minutes.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setForgotMode(false); setForgotSent(false); setForgotEmail(""); }}
+                  className="mt-6 w-full border border-hairline py-3 text-xs uppercase tracking-widest text-muted-foreground transition-colors hover:border-foreground hover:text-foreground"
+                >
+                  Back to sign in
+                </button>
+              </div>
+            ) : (
+              <>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Enter the email linked to your account and we'll send you a reset link.
+                </p>
+                <form onSubmit={handleForgotPasswordSubmit} className="mt-6">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Email Address</label>
+                    <input
+                      required
+                      type="email"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      className="mt-1 w-full border-b border-hairline bg-transparent py-2 text-sm outline-none focus:border-foreground"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={forgotLoading}
+                    className="mt-6 w-full bg-foreground py-3 text-xs uppercase tracking-widest text-background transition-transform hover:scale-[1.01] disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    {forgotLoading ? "Sending..." : "Send Reset Link"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForgotMode(false)}
+                    className="mt-3 w-full py-2 text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground"
+                  >
+                    Back to sign in
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
         ) : (
           <div>
             {/* Segmented Auth Mode Tabs */}
@@ -217,7 +328,18 @@ export function LoginModal() {
 
                 {/* Always Show Password Field */}
                 <div>
-                  <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Password</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Password</label>
+                    {!isSignUp && (
+                      <button
+                        type="button"
+                        onClick={() => { setForgotMode(true); setForgotEmail(form.email); }}
+                        className="text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground underline underline-offset-2"
+                      >
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
                   <div className="relative flex items-center">
                     <input
                       required

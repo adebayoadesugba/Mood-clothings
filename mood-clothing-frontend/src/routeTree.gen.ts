@@ -23,6 +23,7 @@ import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopGenderRouteImport } from './routes/shop.$gender'
+import { Route as ResetPasswordTokenRouteImport } from './routes/reset-password.$token'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 import { Route as ShopGenderSubRouteImport } from './routes/shop.$gender.$sub'
 
@@ -97,6 +98,11 @@ const ShopGenderRoute = ShopGenderRouteImport.update({
   path: '/shop/$gender',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordTokenRoute = ResetPasswordTokenRouteImport.update({
+  id: '/reset-password/$token',
+  path: '/reset-password/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProductIdRoute = ProductIdRouteImport.update({
   id: '/product/$id',
   path: '/product/$id',
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wishlist': typeof WishlistRoute
   '/product/$id': typeof ProductIdRoute
+  '/reset-password/$token': typeof ResetPasswordTokenRoute
   '/shop/$gender': typeof ShopGenderRouteWithChildren
   '/shop/$gender/$sub': typeof ShopGenderSubRoute
 }
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wishlist': typeof WishlistRoute
   '/product/$id': typeof ProductIdRoute
+  '/reset-password/$token': typeof ResetPasswordTokenRoute
   '/shop/$gender': typeof ShopGenderRouteWithChildren
   '/shop/$gender/$sub': typeof ShopGenderSubRoute
 }
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wishlist': typeof WishlistRoute
   '/product/$id': typeof ProductIdRoute
+  '/reset-password/$token': typeof ResetPasswordTokenRoute
   '/shop/$gender': typeof ShopGenderRouteWithChildren
   '/shop/$gender/$sub': typeof ShopGenderSubRoute
 }
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/wishlist'
     | '/product/$id'
+    | '/reset-password/$token'
     | '/shop/$gender'
     | '/shop/$gender/$sub'
   fileRoutesByTo: FileRoutesByTo
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/wishlist'
     | '/product/$id'
+    | '/reset-password/$token'
     | '/shop/$gender'
     | '/shop/$gender/$sub'
   id:
@@ -216,6 +227,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/wishlist'
     | '/product/$id'
+    | '/reset-password/$token'
     | '/shop/$gender'
     | '/shop/$gender/$sub'
   fileRoutesById: FileRoutesById
@@ -235,6 +247,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WishlistRoute: typeof WishlistRoute
   ProductIdRoute: typeof ProductIdRoute
+  ResetPasswordTokenRoute: typeof ResetPasswordTokenRoute
   ShopGenderRoute: typeof ShopGenderRouteWithChildren
 }
 
@@ -338,6 +351,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopGenderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password/$token': {
+      id: '/reset-password/$token'
+      path: '/reset-password/$token'
+      fullPath: '/reset-password/$token'
+      preLoaderRoute: typeof ResetPasswordTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/product/$id': {
       id: '/product/$id'
       path: '/product/$id'
@@ -382,6 +402,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WishlistRoute: WishlistRoute,
   ProductIdRoute: ProductIdRoute,
+  ResetPasswordTokenRoute: ResetPasswordTokenRoute,
   ShopGenderRoute: ShopGenderRouteWithChildren,
 }
 export const routeTree = rootRouteImport

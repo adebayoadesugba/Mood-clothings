@@ -116,31 +116,36 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-// INLINE INITIALIZER WRAPPER: Handles global base64 payload decoding hooks cleanly inside context limits
+// INLINE INITIALIZER WRAPPER: Sends the Google credential to our own backend for verification
+// and account creation/lookup, instead of trusting/decoding the JWT purely client-side.
 function GoogleAuthInitializer({ children }: { children: ReactNode }) {
   const { setUser } = useStore();
 
   useEffect(() => {
-    const googleClientId = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
+    const googleClientId = "415841049802-13ifh320j8llp0djj4t87udtfk2d95cu.apps.googleusercontent.com";
 
-    (window as any).handleGoogleCredentialResponse = (response: any) => {
+    (window as any).handleGoogleCredentialResponse = async (response: any) => {
       try {
         const jwtToken = response.credential;
-        const base64Url = jwtToken.split(".")[1];
-        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-        const decodedPayload = JSON.parse(window.atob(base64));
 
-        const googleUserProfile = {
-          name: decodedPayload.name,
-          email: decodedPayload.email,
-          phone: "",
-        };
+        const BASE_AUTH_URL = import.meta.env.VITE_API_URL + "/api/auth";
+        const res = await fetch(`${BASE_AUTH_URL}/google`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ credential: jwtToken }),
+        });
 
-        setUser(googleUserProfile, jwtToken);
-        toast.success(`Successfully signed in via Google as ${googleUserProfile.name}`);
-      } catch (err) {
-        console.error("Google profile decoding mishap:", err);
-        toast.error("Unable to parse Google authentication parameters.");
+        const data = await res.json();
+
+        if (!res.ok || !data.data) {
+          throw new Error(data.message || "Google sign-in verification failed.");
+        }
+
+        setUser(data.data, data.token);
+        toast.success(`Successfully signed in via Google as ${data.data.name}`);
+      } catch (err: any) {
+        console.error("Google sign-in failed:", err);
+        toast.error(err.message || "Unable to complete Google sign-in.");
       }
     };
 

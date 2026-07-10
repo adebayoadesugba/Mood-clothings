@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductCard } from "@/components/ProductCard";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
@@ -54,6 +54,21 @@ function CollectionPage() {
   const [sub, setSub] = useState<Sub>("all");
   const [tag, setTag] = useState<Tag>("all");
 
+  const heroImages = [
+    "https://res.cloudinary.com/gam6ajgd/image/upload/v1783593723/ngxiyhww6xnigtlmbiqb.jpg",
+    "https://res.cloudinary.com/gam6ajgd/image/upload/v1783593510/lyswa7nkacegf649dvfp.jpg"
+  ];
+
+  const [currentImgIdx, setCurrentImgIdx] = useState(0);
+
+  // Automatic slide cycler ticking smoothly every 5 seconds
+  useEffect(() => {
+    const slideTimer = setInterval(() => {
+      setCurrentImgIdx((prevIdx) => (prevIdx + 1) % heroImages.length);
+    }, 5000);
+    return () => clearInterval(slideTimer);
+  }, [heroImages.length]);
+
   // Grab live database products right from global context along with loader flag
   const { PRODUCTS: liveRegistry, isLoading } = useStore();
 
@@ -96,65 +111,100 @@ function CollectionPage() {
       <div className="min-h-[70vh] w-full grid place-items-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 border-[3px] border-hairline border-t-foreground rounded-full animate-spin" />
-          <p className="text-lg uppercase tracking-widest text-muted-foreground font-mono">Loading Collection Drop...</p>
+          <p className="text-sm uppercase tracking-widest text-muted-foreground font-mono">Loading Collection Drop...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-8">
-      <Breadcrumbs items={[{ label: "Home", to: "/" }, { label: "Collection" }]} />
-
-      <header className="mt-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="font-display text-4xl md:text-6xl">The Collection</h1>
-          <p className="mt-3 max-w-xl text-sm text-muted-foreground">
-            Every Mood Clothings piece in one place new arrivals, best sellers, and everyday classics across every category.
-          </p>
+    <div className="w-full text-sm md:text-lg">
+      {/* FIXED HERO COMPONENT: Edge-to-edge full width layout container frame with custom 50vh mobile / 75vh desktop heights */}
+      <section className="relative w-full h-[50vh] md:h-[75vh] overflow-hidden bg-foreground">
+        {heroImages.map((src, idx) => {
+          const isVisible = currentImgIdx === idx;
+          return (
+            <div
+              key={src}
+              className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+                isVisible ? "opacity-100 scale-100" : "opacity-0 scale-[1.01]"
+              }`}
+              style={{ backgroundImage: `url(${src})`, willChange: "opacity, transform" }}
+            />
+          );
+        })}
+        {/* Solid dark protective mask overlay */}
+        <div className="absolute inset-0 bg-black/55 backdrop-blur-[0.5px]" />
+        
+        {/* Large prominent thick collection title overlay */}
+        <div className="absolute inset-0 flex items-center justify-center p-4">
+          <h1 className="text-white font-display text-4xl sm:text-7xl lg:text-8xl font-black uppercase tracking-[0.12em] text-center select-none drop-shadow-2xl">
+            Collection
+          </h1>
         </div>
-        <span className="text-xs uppercase tracking-widest text-muted-foreground">{items.length} items</span>
-      </header>
+      </section>
 
-      {/* Filters */}
-      <div className="mt-8 space-y-3">
-        <FilterRow label="Category">
-          <Chip active={cat === "all"} onClick={() => setCat("all")}>All</Chip>
-          {CATEGORIES.map((c) => (
-            <Chip key={c.slug} active={cat === c.slug} onClick={() => setCat(c.slug)}>{c.label}</Chip>
-          ))}
-        </FilterRow>
-        <FilterRow label="Type">
-          <Chip active={sub === "all"} onClick={() => setSub("all")}>All</Chip>
-          {SUBCATEGORIES.map((s) => (
-            <Chip key={s.slug} active={sub === s.slug} onClick={() => setSub(s.slug)}>{s.label}</Chip>
-          ))}
-        </FilterRow>
-        <FilterRow label="Tag">
-          <Chip active={tag === "all"} onClick={() => setTag("all")}>All</Chip>
-          <Chip active={tag === "new"} onClick={() => setTag("new")}>New Arrivals</Chip>
-          <Chip active={tag === "best"} onClick={() => setTag("best")}>Best Sellers</Chip>
-          <Chip active={tag === "recommended"} onClick={() => setTag("recommended")}>Recommended</Chip>
-        </FilterRow>
+      {/* Main content grid padded back into its standard container margins below the hero boundary */}
+      <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-8">
+        <Breadcrumbs items={[{ label: "Home", to: "/" }, { label: "Collection" }]} />
+
+        <header className="mt-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h1 className="font-display text-3xl md:text-5xl font-semibold">The Collection</h1>
+            <p className="mt-3 max-w-xl text-xs md:text-sm text-muted-foreground">
+              Every Mood Clothings piece in one place new arrivals, best sellers, and everyday classics across every category.
+            </p>
+          </div>
+          <span className="text-xs uppercase tracking-widest text-muted-foreground font-medium font-mono">{items.length} items</span>
+        </header>
+
+        {/* Filters */}
+        <div className="mt-8 space-y-3">
+          <FilterRow label="Category">
+            <Chip active={cat === "all"} onClick={() => setCat("all")}>All</Chip>
+            {CATEGORIES.map((c) => (
+              <Chip key={c.slug} active={cat === c.slug} onClick={() => setCat(c.slug)}>{c.label}</Chip>
+            ))}
+          </FilterRow>
+          <FilterRow label="Type">
+            <Chip active={sub === "all"} onClick={() => setSub("all")}>All</Chip>
+            {SUBCATEGORIES.map((s) => (
+              <Chip key={s.slug} active={sub === s.slug} onClick={() => setSub(s.slug)}>{s.label}</Chip>
+            ))}
+          </FilterRow>
+          <FilterRow label="Tag">
+            <Chip active={tag === "all"} onClick={() => setTag("all")}>All</Chip>
+            <Chip active={tag === "new"} onClick={() => setTag("new")}>New Arrivals</Chip>
+            <Chip active={tag === "best"} onClick={() => setTag("best")}>Best Sellers</Chip>
+            <Chip active={tag === "recommended"} onClick={() => setTag("recommended")}>Recommended</Chip>
+          </FilterRow>
+        </div>
+
+        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 lg:grid-cols-6">
+          {items.map((p) => <ProductCard key={p.id} product={p} />)}
+          {items.length === 0 && (
+            <p className="col-span-full text-xs md:text-sm text-muted-foreground">No items match those filters yet.</p>
+          )}
+        </div>
+
+        <div className="mt-12 flex flex-wrap justify-center gap-3">
+          <Link to="/new-arrivals" className="border border-foreground bg-foreground px-6 py-3 text-[11px] uppercase tracking-widest text-background font-medium hover:opacity-90 transition-opacity">
+            View New Arrivals
+          </Link>
+          <Link to="/shop/$gender" params={{ gender: "women" }} className="border border-hairline px-6 py-3 text-[11px] uppercase tracking-widest hover:border-foreground transition-colors font-medium">
+            Shop Women
+          </Link>
+          <Link to="/shop/men" className="border border-foreground bg-foreground px-6 py-3 text-[11px] uppercase tracking-widest text-background font-medium hover:opacity-90 transition-opacity">
+            Shop Men
+          </Link>
+
+          <Link to="/shop/$gender" params={{ gender: "kids" }} className="border border-hairline px-6 py-3 text-[11px] uppercase tracking-widest hover:border-foreground transition-colors font-medium">
+            Shop Kids
+          </Link>
+        </div>
+
+        <RecentlyViewed />
       </div>
-
-      <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 lg:grid-cols-6">
-        {items.map((p) => <ProductCard key={p.id} product={p} />)}
-        {items.length === 0 && (
-          <p className="col-span-full text-sm text-muted-foreground">No items match those filters yet.</p>
-        )}
-      </div>
-
-      <div className="mt-12 flex flex-wrap justify-center gap-3">
-        <Link to="/new-arrivals" className="border border-foreground bg-foreground px-6 py-3 text-[11px] uppercase tracking-widest text-background">
-          View New Arrivals
-        </Link>
-        <Link to="/shop/$gender" params={{ gender: "women" }} className="border border-hairline px-6 py-3 text-[11px] uppercase tracking-widest hover:border-foreground">
-          Shop Women
-        </Link>
-      </div>
-
-      <RecentlyViewed />
     </div>
   );
 }
@@ -162,7 +212,7 @@ function CollectionPage() {
 function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="w-20 shrink-0 text-[10px] uppercase tracking-widest text-muted-foreground">{label}</span>
+      <span className="w-20 shrink-0 text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{label}</span>
       <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );
@@ -173,7 +223,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
     <button
       type="button"
       onClick={onClick}
-      className={`border px-4 py-2 text-[11px] uppercase tracking-widest transition-colors ${
+      className={`border px-4 py-2 text-[11px] uppercase tracking-widest transition-colors font-medium ${
         active ? "border-foreground bg-foreground text-background" : "border-hairline hover:border-foreground"
       }`}
     >

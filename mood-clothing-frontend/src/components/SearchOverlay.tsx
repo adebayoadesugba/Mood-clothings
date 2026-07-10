@@ -86,7 +86,8 @@ export function SearchOverlay() {
               {results.map((p) => {
                 const wished = wishlist.includes(p.id);
                 return (
-                  <div key={p.id} className="group relative block">
+                  // FIXED: Added border, thin rounded frame layer, background panel card, and precise internal padding
+                  <div key={p.id} className="group relative block border border-hairline/60 rounded-md p-2 bg-background shadow-2xs">
                     <Link
                       to="/product/$id"
                       params={{ id: p.id }}
@@ -94,7 +95,8 @@ export function SearchOverlay() {
                       className="block"
                       aria-label={p.name}
                     >
-                      <div className="relative overflow-hidden bg-secondary">
+                      {/* Rounded-sm inner image container asset clips cleanly */}
+                      <div className="relative overflow-hidden bg-secondary rounded-sm">
                         <img src={p.images[0]} alt={p.name} loading="lazy" className="product-img transition-transform duration-500 group-hover:scale-105" />
                       </div>
                     </Link>
@@ -104,12 +106,12 @@ export function SearchOverlay() {
                       type="button"
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(p.id); }}
                       aria-label={wished ? "Remove from wishlist" : "Add to wishlist"}
-                      className="absolute right-2 top-2 z-10 grid h-8 w-8 place-items-center rounded-full bg-background/90 backdrop-blur shadow-sm transition-transform hover:scale-110"
+                      className="absolute right-4 top-4 z-10 grid h-8 w-8 place-items-center rounded-full bg-background/90 backdrop-blur shadow-sm transition-transform hover:scale-110"
                     >
                       <Heart className={cn("h-3.5 w-3.5 text-foreground transition-colors", wished && "fill-foreground")} />
                     </button>
 
-                    <div className="mt-2 flex items-baseline justify-between gap-2 px-0.5">
+                    <div className="mt-2.5 flex items-baseline justify-between gap-2 px-1 pb-0.5">
                       <span className="truncate text-xs uppercase tracking-widest text-foreground font-medium">{p.name}</span>
                       {/* Swapped token strings to output format mapping calculations with standard font mono alignments */}
                       <span className="shrink-0 text-xs tabular-nums font-mono font-semibold text-foreground">{formatNaira(p.price)}</span>

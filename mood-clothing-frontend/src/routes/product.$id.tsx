@@ -286,8 +286,8 @@ function ProductPage() {
           </div>
 
           <div className="mt-8 grid grid-cols-3 gap-4 text-sm max-md:text-[10px] uppercase tracking-widest text-muted-foreground border-t border-hairline pt-6 max-md:pt-4 max-md:mt-4">
-            <div className="flex flex-col items-start gap-2"><Truck className="h-5 w-5 max-md:h-4 max-md:w-4 text-foreground" /> Free shipping over ₦75,000</div>
-            <div className="flex flex-col items-start gap-2"><RefreshCcw className="h-5 w-5 max-md:h-4 max-md:w-4 text-foreground" /> 30-day returns</div>
+            <div className="flex flex-col items-start gap-2"><Truck className="h-5 w-5 max-md:h-4 max-md:w-4 text-foreground" /> Free shipping over ₦1,500</div>
+            <div className="flex flex-col items-start gap-2"><RefreshCcw className="h-5 w-5 max-md:h-4 max-md:w-4 text-foreground" /> 7-day returns</div>
             <div className="flex flex-col items-start gap-2"><ShieldCheck className="h-5 w-5 max-md:h-4 max-md:w-4 text-foreground" /> Secure checkout</div>
           </div>
         </div>

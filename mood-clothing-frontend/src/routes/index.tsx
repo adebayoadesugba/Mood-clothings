@@ -105,7 +105,7 @@ function Home() {
   }
 
   return (
-    <div className="mx-auto max-w-[1440px] px-1 md:px-8">
+    <div className="mx-auto max-w-[1440px] px-0 md:px-0">
       {/* Hero */}
       <section className="relative mt-4 overflow-hidden rounded-lg">
         {/* HERO VIDEO PLAYLIST: autoplays muted + inline (required for mobile autoplay), plays each
@@ -131,7 +131,7 @@ function Home() {
         <div className="absolute inset-0 bg-foreground/60" />
 
         {/* CTA — centered at the bottom of the hero on all screen sizes, no text/heading above it */}
-        <div className="absolute inset-x-0 bottom-6 flex justify-center px-4 md:bottom-10">
+        <div className="px-2 absolute inset-x-0 bottom-6 flex justify-center px-4 md:bottom-10">
           <Link
             to="/collection"
             className="inline-flex items-center gap-2 border border-background/60 bg-background/10 px-6 py-3 text-xs uppercase tracking-widest text-background backdrop-blur transition-transform hover:scale-[1.02]"
@@ -142,14 +142,14 @@ function Home() {
       </section>
 
       {/* Intro line */}
-      <section className="mx-auto max-w-3xl py-16 text-center text-lg leading-relaxed md:text-xl">
+      <section className="mx-auto max-w-3xl py-16 text-center text-lg leading-relaxed md:text-xl px-8">
         Find the latest styles, classic favorites, and the modern, comfortable fashion.
         Get ready to look and feel amazing in every click with <span className="font-display italic">MOOD CLOTHINGS</span>.
       </section>
 
       {/* Featured products */}
       <section className="py-8">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div className="px-2 mb-6 flex flex-wrap items-end justify-between gap-4 md:px-8">
           <h2 className="font-display text-3xl md:text-4xl">Featured Product</h2>
           <div className="flex flex-wrap gap-2">
             {FILTERS.map((f) => (
@@ -169,7 +169,7 @@ function Home() {
         </div>
         
         {/* Dynamic unified grid layout handles sorting and layouts cleanly */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 lg:grid-cols-6">
+        <div className="px-2 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 md:px-8 lg:grid-cols-6">
           {featured.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
 
@@ -181,7 +181,7 @@ function Home() {
       </section>
 
       {/* Editorial banner */}
-      <section className="my-16 rounded-lg bg-secondary p-6 md:p-12">
+      <section className="px-2 my-16 rounded-lg bg-secondary p-6 md:p-12 md:px-8">
         <div className="grid gap-8 md:grid-cols-2 md:items-center">
           <div>
             <h2 className="font-display text-3xl md:text-5xl">Elevate your style with our new collection</h2>
@@ -209,7 +209,7 @@ function Home() {
       </section>
 
       {/* Categories Carousel (Scaled to precisely match ProductCard ratios) */}
-      <section className="py-12 relative">
+      <section className="px-2 py-12 relative md:px-8">
         <div className="flex items-center justify-between mb-8">
           <h2 className="font-display text-3xl md:text-4xl">Top Fashion Category</h2>
           
@@ -258,7 +258,7 @@ function Home() {
       </section>
 
       {/* DISCOVER MORE PIECES: Minimalist 8 Random product shuffle loop array showcase grid */}
-      <section className="py-16 border-t border-hairline">
+      <section className="px-2 py-16 border-t border-hairline md:px-8">
         <div className="mb-8">
           <h2 className="font-display text-3xl md:text-4xl">Discover More Pieces</h2>
           <p className="text-xs text-muted-foreground mt-1 uppercase tracking-wider">Freshly rotated items from the atelier console</p>
@@ -269,7 +269,7 @@ function Home() {
             <ProductCard key={p.id || p._id} product={p} />
           ))}
         </div>
-      </section>
+      </section>1
 
       <RecentlyViewed />
     </div>
