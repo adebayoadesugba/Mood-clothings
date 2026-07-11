@@ -19,10 +19,10 @@ function CustomDesign() {
   const { user, openLogin } = useStore(); 
   const [files, setFiles] = useState<{ name: string; url: string }[]>([]);
   const [dragging, setDragging] = useState(false);
+  const [phone, setPhone] = useState(""); 
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // FIXED: Migrated local storage blob mapping hooks to secure asynchronous Cloudinary pipelines
   const addFiles = async (list: FileList | null) => {
     if (!user) {
       toast.error("Please sign in or create an account to upload design materials.");
@@ -60,7 +60,7 @@ function CustomDesign() {
           }
 
           const data = await res.json();
-          return { name: file.name, url: data.secure_url }; // Returns permanent secure web link
+          return { name: file.name, url: data.secure_url }; 
         })
       );
 
@@ -72,7 +72,7 @@ function CustomDesign() {
     }
   };
 
-  const handleSubmitBrief = async (e: React.FormEvent) => {
+  const handleSubmitBrief = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!user) {
@@ -82,9 +82,12 @@ function CustomDesign() {
     }
 
     setSubmitting(true);
-    const targetForm = e.currentTarget as HTMLFormElement;
-    const nameInput = targetForm.elements[0] as HTMLInputElement;
-    const emailInput = targetForm.elements[1] as HTMLInputElement;
+    
+    // FIXED: Using FormData to reliably extract names from the form layout without crashing
+    const formData = new FormData(e.currentTarget);
+    const customerName = formData.get("customerName") as string;
+    const userEmail = formData.get("userEmail") as string;
+    const userPhone = formData.get("phone") as string;
 
     try {
       const token = localStorage.getItem("mood-clothings-auth-token");
@@ -96,9 +99,10 @@ function CustomDesign() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          customerName: nameInput.value.trim(),
-          userEmail: emailInput.value.trim().toLowerCase(),
-          files: files, // Sending files object structure tracking reference items
+          customerName: (customerName || "").trim(),
+          userEmail: (userEmail || "").trim().toLowerCase(),
+          userPhone: userPhone.trim(), 
+          files: files, 
           notes: notes.trim()
         })
       });
@@ -111,6 +115,7 @@ function CustomDesign() {
 
       toast.success("Design brief submitted — our atelier will be in touch.");
       setFiles([]);
+      setPhone("");
       setNotes("");
     } catch (err: any) {
       console.error("Atelier brief error track:", err);
@@ -170,19 +175,24 @@ function CustomDesign() {
         <form onSubmit={handleSubmitBrief} className="space-y-4">
           <div>
             <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Full Name</label>
-            <input required defaultValue={user?.name ?? ""} className="mt-1 w-full border-b border-hairline bg-transparent py-2 text-sm outline-none focus:border-foreground" />
+            <input required name="customerName" defaultValue={user?.name ?? ""} className="mt-1 w-full border-b border-hairline bg-transparent py-2 text-sm outline-none focus:border-foreground" />
           </div>
           <div>
             <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Email</label>
-            <input required type="email" defaultValue={user?.email ?? ""} className="mt-1 w-full border-b border-hairline bg-transparent py-2 text-sm outline-none focus:border-foreground" />
+            <input required name="userEmail" type="email" defaultValue={user?.email ?? ""} className="mt-1 w-full border-b border-hairline bg-transparent py-2 text-sm outline-none focus:border-foreground" />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Phone Number</label>
+            <input required name="phone" type="tel" placeholder="e.g. +234..." value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1 w-full border-b border-hairline bg-transparent py-2 text-sm outline-none focus:border-foreground" />
           </div>
           <div>
             <label className="text-[10px] uppercase tracking-widest text-muted-foreground">Notes</label>
             <textarea
+              name="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={5}
-              placeholder="Tell us about the piece — silhouette, fabric, occasion, timeline."
+              placeholder="Tell us about the piece silhouette, fabric, occasion, timeline."
               className="mt-1 w-full resize-none border-b border-hairline bg-transparent py-2 text-sm outline-none focus:border-foreground"
             />
           </div>

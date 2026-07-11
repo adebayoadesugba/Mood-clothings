@@ -77,7 +77,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" },
       { title: "Mood Clothings Modern Fashion, Timeless Style" },
       { name: "description", content: "Shop the latest ready-to-wear collections for men, women, and kids. Editorial fashion, refined essentials, and accessories curated by Mood Clothings." },
       { property: "og:title", content: "Mood Clothings — Modern Fashion, Timeless Style" },

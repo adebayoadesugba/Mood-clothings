@@ -117,7 +117,7 @@ function ProductPage() {
       <div className="min-h-[70vh] w-full grid place-items-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="h-12 w-12 border-[3px] border-hairline border-t-foreground rounded-full animate-spin" />
-          <p className="text-lg uppercase tracking-widest text-muted-foreground font-mono">Loading Product...</p>
+          <p className="text-sm uppercase tracking-widest text-muted-foreground font-mono">Loading Product...</p>
         </div>
       </div>
     );

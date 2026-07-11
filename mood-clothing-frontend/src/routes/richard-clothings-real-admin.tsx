@@ -44,6 +44,7 @@ type UserDesign = {
   _id?: string;
   customerName: string;
   userEmail: string;
+  userPhone?: string;
   notes: string;
   files: { name: string; url: string }[];
   status?: string;
@@ -94,6 +95,7 @@ function seedUserDesigns(): UserDesign[] {
       id: "DSN-4001",
       customerName: "Tunde Bakare",
       userEmail: "tunde@bakaredigital.com",
+      userPhone: "+234 803 123 4567",
       createdAt: "2026-07-04",
       notes: "I want this specific vintage wash denim block tailored with custom embroidery on the back panel. Please ensure the structural heavy canvas feels thick and matching industrial zippers are mounted along the seams.",
       files: [
@@ -453,7 +455,7 @@ function ProductsModule({ sessionToken, products, setProducts, refreshInventory 
     return (
       <div className="h-full w-full flex flex-col items-center justify-center p-12 bg-background border border-hairline">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <p className="mt-2 text-lg text-muted-foreground uppercase tracking-widest font-medium">Synchronizing live item catalog data streams...</p>
+        <p className="mt-2 text-sm text-muted-foreground uppercase tracking-widest font-medium">Synchronizing live item catalog data streams...</p>
       </div>
     );
   }
@@ -819,7 +821,7 @@ function OrdersModule({ sessionToken, orders, setOrders }: { sessionToken: strin
     return (
       <div className="h-full w-full flex flex-col items-center justify-center p-12 bg-background border border-hairline">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <p className="mt-2 text-lg text-muted-foreground uppercase tracking-widest font-medium">Fetching secure fulfillment data routes...</p>
+        <p className="mt-2 text-sm text-muted-foreground uppercase tracking-widest font-medium">Fetching secure fulfillment data routes...</p>
       </div>
     );
   }
@@ -991,7 +993,9 @@ function DesignsModule({ sessionToken, designs, setDesigns }: { sessionToken: st
           _id: d._id,
           customerName: d.customerName || "Bespoke Customer",
           userEmail: d.userEmail || d.email || "",
+          userPhone: d.userPhone || d.phone || "",
           notes: d.notes || d.note || "",
+
           files: Array.isArray(d.files) ? d.files : Array.isArray(d.images) ? d.images.map((img: string) => ({ name: "Asset Reference", url: img })) : [],
           status: d.status || "Received",
           createdAt: d.createdAt ? d.createdAt.slice(0, 10) : new Date().toISOString().slice(0, 10)
@@ -1122,7 +1126,8 @@ function DesignsModule({ sessionToken, designs, setDesigns }: { sessionToken: st
                       <div className="mt-2 border border-hairline bg-background p-4 text-lg leading-relaxed">
                         <p className="font-semibold text-xl text-foreground">{d.customerName}</p>
                         <p className="text-muted-foreground text-lg mt-1 font-mono break-all">{d.userEmail}</p>
-                        <div className="mt-4 border-t border-hairline/60 pt-3">
+                        <p className="text-muted-foreground text-lg mt-1 font-mono break-all">{d.userPhone}</p>
+                      <div className="mt-4 border-t border-hairline/60 pt-3">
                           <button onClick={() => window.location.href = `mailto:${d.userEmail}?subject=Moon%20Clothings%20-%20Regarding%20Your%20Custom%20Design%20${d.id}`} className="w-full bg-foreground text-background text-lg uppercase tracking-widest py-2 text-center transition-opacity hover:opacity-90">Open Mail Dialog</button>
                         </div>
                       </div>

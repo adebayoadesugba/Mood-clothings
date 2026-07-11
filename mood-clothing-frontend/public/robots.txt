@@ -1,6 +1,6 @@
 User-agent: *
 Allow: /
 Disallow: /admin
-Disallow: /mood-clothings-real-admin
+Disallow: /richard-clothings-real-admin
 
 Sitemap: https://moodclothings.com/sitemap.xml

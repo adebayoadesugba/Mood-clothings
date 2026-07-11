@@ -70,6 +70,17 @@
 
 @layer base {
   * { border-color: var(--color-border); }
+
+  /* MOBILE STABILITY FIXES:
+     - overflow-x hidden + touch-action pan-y stop the page from sliding sideways when dragged
+     - overscroll-behavior none removes the rubber-band bounce past the top/bottom edges
+     These apply site-wide and don't affect normal vertical scrolling or button/link taps. */
+  html, body {
+    overflow-x: hidden;
+    overscroll-behavior: none;
+    touch-action: pan-y;
+  }
+
   html { font-family: var(--font-sans); }
   body {
     background-color: var(--color-background);
