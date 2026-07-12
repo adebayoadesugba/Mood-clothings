@@ -72,11 +72,18 @@
   * { border-color: var(--color-border); }
 
   /* MOBILE STABILITY FIXES:
-     - overflow-x hidden + touch-action pan-y stop the page from sliding sideways when dragged
+     - overflow-x hidden on body only (NOT html — locking it on html breaks vertical
+       scroll entirely on some mobile browsers, since html is the real scroll root there)
      - overscroll-behavior none removes the rubber-band bounce past the top/bottom edges
+     - touch-action pan-y explicitly allows normal vertical scrolling while blocking
+       horizontal drag gestures
      These apply site-wide and don't affect normal vertical scrolling or button/link taps. */
-  html, body {
+  html {
+    overscroll-behavior-x: none;
+  }
+  body {
     overflow-x: hidden;
+    overflow-y: auto;
     overscroll-behavior: none;
     touch-action: pan-y;
   }

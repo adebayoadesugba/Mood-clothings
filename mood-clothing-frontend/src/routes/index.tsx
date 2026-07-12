@@ -13,7 +13,9 @@ export const Route = createFileRoute("/")({
 // HERO VIDEO PLAYLIST: add, remove, or reorder video URLs here.
 // They play in this exact order, then loop back to the first one automatically, forever.
 const HERO_VIDEOS: string[] = [
+
   "https://res.cloudinary.com/gam6ajgd/video/upload/v1783625924/MOOD_ADS_yd3ebt.mp4",
+  "https://res.cloudinary.com/gam6ajgd/video/upload/v1783802794/Mood_cap1_mcrasx.mp4",
   "https://res.cloudinary.com/gam6ajgd/video/upload/v1783623029/Change_call_now_to_SHOP_202607091944_dmexui.mp4",
 ];
 
@@ -143,8 +145,7 @@ function Home() {
 
       {/* Intro line */}
       <section className="mx-auto max-w-3xl py-16 text-center text-lg leading-relaxed md:text-xl px-8">
-        Find the latest styles, classic favorites, and the modern, comfortable fashion.
-        Get ready to look and feel amazing in every click with <span className="font-display italic">MOOD CLOTHINGS</span>.
+        Find premium styles, Quality urban classic, luxury and comfortable fashion apparels.Get ready to look and feel amazing in every click with <span className="font-display italic">MOOD CLOTHINGS</span>.
       </section>
 
       {/* Featured products */}
