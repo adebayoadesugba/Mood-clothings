@@ -15,16 +15,42 @@ export const Route = createFileRoute("/contact")({
   component: ContactPage,
 });
 
+// Your Formspree endpoint — messages submitted here land in the inbox linked to your Formspree account
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/mgogvevn";
+
 function ContactPage() {
   const [sending, setSending] = useState(false);
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSending(true);
-    setTimeout(() => {
+
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+
+    try {
+      const res = await fetch(FORMSPREE_ENDPOINT, {
+        method: "POST",
+        body: formData,
+        headers: {
+          // Tells Formspree to reply with JSON instead of redirecting to their own page
+          Accept: "application/json",
+        },
+      });
+
+      if (res.ok) {
+        form.reset();
+        toast.success("Message sent. We'll be in touch within one business day.");
+      } else {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.errors?.[0]?.message || "Failed to send message. Please try again.");
+      }
+    } catch (err: any) {
+      console.error("Contact form submission failed:", err);
+      toast.error(err.message || "Unable to send message. Please try again or email us directly.");
+    } finally {
       setSending(false);
-      (e.target as HTMLFormElement).reset();
-      toast.success("Message sent. We'll be in touch within one business day.");
-    }, 700);
+    }
   };
 
   return (
@@ -68,6 +94,11 @@ function ContactPage() {
         </aside>
 
         <form onSubmit={onSubmit} className="space-y-4">
+          {/* HONEYPOT FIELD: invisible to real people, but bots that auto-fill every field will
+              fill this one too — Formspree silently discards submissions where it's non-empty.
+              Do not remove this, and do not give it a visible label or styling. */}
+          <input type="text" name="_gotcha" tabIndex={-1} autoComplete="off" style={{ display: "none" }} />
+
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block">
               <span className="text-lg uppercase tracking-widest text-muted-foreground">Name</span>

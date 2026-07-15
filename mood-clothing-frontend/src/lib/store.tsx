@@ -15,7 +15,7 @@ type StoreState = {
   searchOpen: boolean;
 };
 
-// EXPLICITLY TYPE EXPOSE FIND PRODUCT IN THE CONTEXT OBJECT INTERFACE
+// EXPLICITLY TYPE EXPOSE FINDPRODUCT IN THE CONTEXT OBJECT INTERFACE
 type Ctx = StoreState & {
   addToCart: (id: string, color?: string, qty?: number, size?: string) => void;
   removeFromCart: (id: string) => void;
@@ -76,6 +76,34 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [isInventoryLoading, setIsInventoryLoading] = useState(true);
   const [isHydrated, setIsHydrated] = useState(false); // <-- CRUCIAL FIX: Session verification guard state
 
+  // PRODUCT CACHE: lets returning visitors see products instantly instead of staring at a
+  // blocking spinner on every page load — especially important while Render's free tier
+  // backend is cold-starting. Cached data is shown immediately; a fresh copy is still
+  // fetched quietly in the background to keep things up to date.
+  const PRODUCT_CACHE_KEY = "mood-clothings-product-cache";
+  const PRODUCT_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+  const loadCachedProducts = (): any[] | null => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem(PRODUCT_CACHE_KEY);
+      if (!raw) return null;
+      const { data, cachedAt } = JSON.parse(raw);
+      if (!Array.isArray(data) || !cachedAt) return null;
+      if (Date.now() - cachedAt > PRODUCT_CACHE_TTL) return null; // stale, ignore it
+      return data;
+    } catch {
+      return null;
+    }
+  };
+
+  const saveCachedProducts = (data: any[]) => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(PRODUCT_CACHE_KEY, JSON.stringify({ data, cachedAt: Date.now() }));
+    } catch { /* ignore private write issues */ }
+  };
+
   // Initialize: Load core session tokens first, then fetch the correct scoped storage profile
   useEffect(() => {
     try {
@@ -96,9 +124,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // FIXED REUSABLE INVENTORY SYNC PIPELINE: Pulls directly from MongoDB architecture
-  const refreshInventory = useCallback(async () => {
-    setIsInventoryLoading(true);
+  // FIXED REUSABLE INVENTORY SYNC PIPELINE: Pulls directly from MongoDB architecture.
+  // `isBackground = true` means "refetch quietly without showing the loading spinner" —
+  // used when we already have cached data on screen and are just refreshing it silently.
+  const refreshInventory = useCallback(async (isBackground = false) => {
+    if (!isBackground) setIsInventoryLoading(true);
     try {
       const response = await fetchAllProducts();
       const dataPayload = response?.data?.data || response?.data || [];
@@ -118,16 +148,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         sub: p.sub || "all"
       }));
       setLiveRegistry(formatted);
+      saveCachedProducts(formatted);
     } catch (err) {
       console.error("Global store failed to sync backend inventory:", err);
     } finally {
-      setIsInventoryLoading(false);
+      if (!isBackground) setIsInventoryLoading(false);
     }
   }, []);
 
-  // Automatically pull backend inventory on application boot to prevent loss on hard reload
+  // Automatically pull backend inventory on application boot to prevent loss on hard reload.
+  // If a valid cached copy exists, show it immediately (no spinner) and refresh quietly
+  // behind the scenes. Otherwise, fall back to the normal blocking fetch.
   useEffect(() => {
-    refreshInventory();
+    const cached = loadCachedProducts();
+    if (cached && cached.length > 0) {
+      setLiveRegistry(cached);
+      setIsInventoryLoading(false);
+      refreshInventory(true); // silent background refresh to keep data current
+    } else {
+      refreshInventory(false);
+    }
   }, [refreshInventory]);
 
   // SCOPED SYNCHRONIZATION SIDE-EFFECT: Saves records exclusively under the user's specific email key block

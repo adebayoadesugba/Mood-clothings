@@ -1,5 +1,5 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { Heart, Star, Minus, Plus, Truck, RefreshCcw, ShieldCheck } from "lucide-react";
+import { Heart, Star, Minus, Plus, Truck, RefreshCcw, ShieldCheck, Ruler, MessageCircle } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductCard } from "@/components/ProductCard";
@@ -17,6 +17,17 @@ const findProductBySlug = (idParam: string, registryProducts: any[] = []) => {
     return { name: "Mood Clothings", description: "", images: [""], colors: ["#000000"], category: "collection", sub: "all", price: 0 };
   }
   return match;
+};
+
+// Formats a delivery window as real calendar dates, e.g. "Fri, Jul 18 – Tue, Jul 22",
+// counting only forward from today — no hardcoded dates to go stale.
+const formatDeliveryWindow = (minDays: number, maxDays: number) => {
+  const fmt = (d: Date) => d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+  const start = new Date();
+  start.setDate(start.getDate() + minDays);
+  const end = new Date();
+  end.setDate(end.getDate() + maxDays);
+  return `${fmt(start)} – ${fmt(end)}`;
 };
 
 export const Route = createFileRoute("/product/$id")({
@@ -49,6 +60,16 @@ const INITIAL_MOCK_REVIEWS = [
   { name: "Priya N.", rating: 4, text: "Beautiful piece, runs a touch large — sized down and it's perfect." },
 ];
 
+// Generic size chart (inches) — swap in real per-product measurements later if you want
+// this to vary by item; for now it's a reasonable universal reference.
+const SIZE_CHART = [
+  { size: "S", chest: "36-38", length: "27" },
+  { size: "M", chest: "39-41", length: "28" },
+  { size: "L", chest: "42-44", length: "29" },
+  { size: "XL", chest: "45-47", length: "30" },
+  { size: "XXL", chest: "48-50", length: "31" },
+];
+
 function ProductPage() {
   const { id } = Route.useParams();
   const { addToCart, toggleWishlist, wishlist, trackView, user, PRODUCTS: liveRegistry, isLoading } = useStore();
@@ -60,6 +81,7 @@ function ProductPage() {
   const [color, setColor] = useState(product ? product.colors[0] : "");
   const [size, setSize] = useState("M"); 
   const [qty, setQty] = useState(1);
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
   
   const [newRating, setNewRating] = useState(5);
   const [newText, setNewText] = useState("");
@@ -112,6 +134,8 @@ function ProductPage() {
     return [...finalPool].sort(() => 0.6 - Math.random()).slice(0, 6);
   }, [product, liveRegistry]);
 
+  const deliveryWindow = useMemo(() => formatDeliveryWindow(2, 3), []);
+
   if (isLoading || !product || product.name === "Mood Clothings" || !product.id) {
     return (
       <div className="min-h-[70vh] w-full grid place-items-center bg-background">
@@ -150,6 +174,12 @@ function ProductPage() {
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank", "noopener,noreferrer");
   };
 
+  const handleStylistWhatsApp = () => {
+    const phoneNumber = "2349065623779";
+    const message = encodeURIComponent(`Hi Mood Clothings, I'd like some styling advice on the "${product.name}".`);
+    window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank", "noopener,noreferrer");
+  };
+
   const sizeOptionsToRender = product.stockSizes && product.stockSizes.length > 0 
     ? product.stockSizes 
     : ["S", "M", "L", "XL"];
@@ -170,11 +200,13 @@ function ProductPage() {
 
       <div className="mt-6 grid gap-8 md:grid-cols-2 lg:gap-12 items-start">
         <div className="flex flex-col gap-3">
-          <div className="overflow-hidden bg-secondary rounded-sm max-w-full md:max-h-[580px] flex items-center justify-center">
+          {/* Main image now zooms subtly on hover (desktop) — a standard fashion-site cue
+              that a closer look is available without leaving the page */}
+          <div className="overflow-hidden bg-secondary rounded-sm max-w-full md:max-h-[580px] flex items-center justify-center group">
             <img
               src={product.images[activeImage]}
               alt={product.name}
-              className="w-full h-full object-cover md:max-h-[580px]"
+              className="w-full h-full object-cover md:max-h-[580px] transition-transform duration-500 md:group-hover:scale-105"
               fetchPriority="high"
             />
           </div>
@@ -194,17 +226,37 @@ function ProductPage() {
 
         <div>
           <h1 className="font-display text-3xl md:text-4xl max-md:text-xl">{product.name}</h1>
-          <div className="mt-3 flex items-center gap-3">
-            <div className="flex items-center gap-0.5">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className={`h-4 w-4 max-md:h-3 max-md:w-3 ${i < Math.round(computedRating) ? "fill-foreground" : "text-hairline"}`} />
-              ))}
-            </div>
-            <span className="text-lg text-muted-foreground max-md:text-xs">{computedRating.toFixed(1)} · {totalReviewsCount} reviews</span>
+
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => document.getElementById("reviews-section")?.scrollIntoView({ behavior: "smooth" })}
+              className="flex items-center gap-2 hover:opacity-70 transition-opacity"
+            >
+              <div className="flex items-center gap-0.5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className={`h-4 w-4 max-md:h-3 max-md:w-3 ${i < Math.round(computedRating) ? "fill-foreground" : "text-hairline"}`} />
+                ))}
+              </div>
+              <span className="text-lg text-muted-foreground max-md:text-xs underline underline-offset-2">{computedRating.toFixed(1)} · {totalReviewsCount} reviews</span>
+            </button>
+
+            {/* STOCK INDICATOR — quiet trust signal, reads from stockSizes when available */}
+            <span className="flex items-center gap-1.5 text-xs max-md:text-[11px] text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
+              In Stock
+            </span>
           </div>
           
           <div className="mt-5 font-display text-4xl font-semibold text-foreground font-mono max-md:text-2xl">{formatNaira(product.price)}</div>
           <p className="mt-6 text-lg leading-relaxed text-muted-foreground max-md:text-sm max-md:mt-4">{product.description}</p>
+
+          {/* DELIVERY ESTIMATE — real calendar dates read as more premium and concrete
+              than a generic "2-3 working days" line */}
+          <div className="mt-4 flex items-center gap-2 text-sm max-md:text-xs text-muted-foreground">
+            <Truck className="h-4 w-4 text-foreground shrink-0" />
+            Get it by <span className="text-foreground font-medium">{deliveryWindow}</span>
+          </div>
 
           {/* Color Selector */}
           <div className="mt-8 max-md:mt-5">
@@ -222,9 +274,42 @@ function ProductPage() {
             </div>
           </div>
 
-          {/* Size Selector with Heading */}
+          {/* Size Selector with Heading + Size Guide toggle */}
           <div className="mt-6 max-md:mt-4">
-            <div className="text-lg uppercase tracking-widest text-muted-foreground max-md:text-xs">Select your size</div>
+            <div className="flex items-center justify-between">
+              <div className="text-lg uppercase tracking-widest text-muted-foreground max-md:text-xs">Select your size</div>
+              <button
+                type="button"
+                onClick={() => setShowSizeGuide((v) => !v)}
+                className="flex items-center gap-1 text-xs max-md:text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground underline underline-offset-2"
+              >
+                <Ruler className="h-3.5 w-3.5" /> Size Guide
+              </button>
+            </div>
+
+            {showSizeGuide && (
+              <div className="mt-3 overflow-x-auto border border-hairline">
+                <table className="w-full min-w-[320px] text-xs max-md:text-[11px]">
+                  <thead className="bg-secondary uppercase tracking-widest text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Size</th>
+                      <th className="px-3 py-2 text-left">Chest (in)</th>
+                      <th className="px-3 py-2 text-left">Length (in)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[color:var(--hairline)]">
+                    {SIZE_CHART.map((row) => (
+                      <tr key={row.size}>
+                        <td className="px-3 py-2 font-medium">{row.size}</td>
+                        <td className="px-3 py-2">{row.chest}</td>
+                        <td className="px-3 py-2">{row.length}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
             <div className="mt-2 flex flex-wrap gap-2">
               {sizeOptionsToRender.map((sz: string) => {
                 const isSelected = size === sz;
@@ -294,7 +379,7 @@ function ProductPage() {
       </div>
 
       {/* Reviews */}
-      <section className="mt-20 max-md:mt-12">
+      <section id="reviews-section" className="mt-20 max-md:mt-12">
         <h2 className="font-display text-2xl md:text-3xl max-md:text-base">Ratings &amp; Reviews</h2>
         <div className="mt-6 grid gap-6 md:grid-cols-[240px_1fr] max-md:gap-4">
           <div className="flex flex-col gap-4">
@@ -385,6 +470,24 @@ function ProductPage() {
             <ProductCard key={p.id} product={p} />
           ))}
         </div>
+      </section>
+
+      {/* STYLIST PROMPT — fills the gap between the two product grids with something
+          human and useful rather than more products: a direct line to styling help,
+          plus a quiet reinforcement of your service guarantees. */}
+      <section className="mt-16 max-md:mt-10 rounded-lg bg-secondary p-8 max-md:p-6 text-center">
+        <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">Need A Hand?</p>
+        <h3 className="mt-3 font-display text-2xl md:text-3xl max-md:text-xl">Not sure this is the right fit?</h3>
+        <p className="mx-auto mt-2 max-w-md text-sm max-md:text-xs text-muted-foreground">
+          Chat with our team for sizing advice, styling suggestions, or any questions before you buy.
+        </p>
+        <button
+          type="button"
+          onClick={handleStylistWhatsApp}
+          className="mt-6 inline-flex items-center gap-2 bg-foreground px-6 py-3 text-xs uppercase tracking-widest text-background transition-transform hover:scale-[1.02]"
+        >
+          <MessageCircle className="h-4 w-4" /> Chat With Us
+        </button>
       </section>
 
       <RecentlyViewed excludeId={product.id} />

@@ -19,6 +19,10 @@ import { SearchOverlay } from "@/components/SearchOverlay";
 import { CartDrawer } from "@/components/CartDrawer";
 import { LoginModal } from "@/components/LoginModal";
 import { WhatsAppButton } from "@/components/WhatsAppButton";
+import { MarqueeBar } from "@/components/MarqueeBar";
+import { NewsletterPopup } from "@/components/NewsletterPopup";
+import { CookieConsentBanner } from "@/components/CookieConsentBanner";
+import { PromoBanner } from "@/components/PromoBanner";
 import { toast } from "sonner";
 
 function NotFoundComponent() {
@@ -185,6 +189,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <StoreProvider>
         <GoogleAuthInitializer>
+          <MarqueeBar />
           <Header />
           <main className="min-h-screen">
             <Outlet />
@@ -194,6 +199,9 @@ function RootComponent() {
           <CartDrawer />
           <LoginModal />
           <WhatsAppButton />
+          <NewsletterPopup />
+          <PromoBanner />
+          <CookieConsentBanner />
           <Toaster position="bottom-left" />
         </GoogleAuthInitializer>
       </StoreProvider>

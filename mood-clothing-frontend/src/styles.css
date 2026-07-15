@@ -118,3 +118,17 @@
 @keyframes overlay-fade { from { opacity: 0 } to { opacity: 1 } }
 @keyframes overlay-slide { from { transform: translateY(-8px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
 @keyframes drawer-in { from { transform: translateX(100%) } to { transform: translateX(0) } }
+
+/* MARQUEE TICKER: seamless infinite horizontal scroll. Two identical children sit
+   side by side; translating the wrapper by exactly -50% loops perfectly with no jump. */
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@utility marquee-track {
+  animation: marquee-scroll 28s linear infinite;
+  &:hover { animation-play-state: paused; }
+}
+
+/* Slide-up entrance used by popups/banners that appear after a delay */
+@keyframes slide-up-in { from { transform: translateY(16px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }

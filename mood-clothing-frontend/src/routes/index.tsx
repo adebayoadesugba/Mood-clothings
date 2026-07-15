@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowUpRight, Play, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowUpRight, Play, ChevronLeft, ChevronRight, Truck, RefreshCcw, ShieldCheck, Sparkles } from "lucide-react";
 import { useMemo, useState, useRef, useEffect } from "react";
 import { ProductCard } from "@/components/ProductCard";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import { PRODUCTS as STATIC_PRODUCTS, CATEGORIES, SUBCATEGORIES, type Product } from "@/lib/products";
 import { useStore } from "@/lib/store"; 
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -18,6 +19,14 @@ const HERO_VIDEOS: string[] = [
   "https://res.cloudinary.com/gam6ajgd/video/upload/v1783802794/Mood_cap1_mcrasx.mp4",
   "https://res.cloudinary.com/gam6ajgd/video/upload/v1783623029/Change_call_now_to_SHOP_202607091944_dmexui.mp4",
 ];
+
+// SHOP THE MOOD: curated captions layered over your existing subcategories/products —
+// no new data model needed, just a different lens on the same catalog. Edit labels freely.
+const MOOD_LABELS = ["Off-Duty Comfort", "Evening Edit", "Street Layers", "Weekend Essentials"];
+
+// Formspree endpoint reused from the contact page, tagged so newsletter sign-ups from this
+// inline section are identifiable in your inbox alongside contact messages.
+const FORMSPREE_ENDPOINT = "https://formspree.io/f/mgogvevn";
 
 const FILTERS = ["All", "New Arrival", "Best Seller", "Recommendation"] as const;
 
@@ -94,6 +103,32 @@ function Home() {
     return shufflableCopy.slice(0, 12); // Return exactly 12 random products for the showcase grid
   }, [combinedProducts]);
 
+  // Inline newsletter section state (separate from the timed popup — this one is always
+  // visible near the bottom of the page for anyone who dismissed the popup or scrolled past it)
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterSending, setNewsletterSending] = useState(false);
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim()) return;
+
+    setNewsletterSending(true);
+    try {
+      const res = await fetch(FORMSPREE_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ email: newsletterEmail.trim(), form_type: "newsletter-signup-inline" }),
+      });
+      if (!res.ok) throw new Error("Failed to subscribe. Please try again.");
+      toast.success("You're subscribed! Welcome to the list.");
+      setNewsletterEmail("");
+    } catch (err: any) {
+      toast.error(err.message || "Unable to subscribe right now.");
+    } finally {
+      setNewsletterSending(false);
+    }
+  };
+
   // FIXED GLOBAL INTERCEPTOR SKELETON: Displays a geometric rolling spinner ring while network request handles fetch payloads
   if (isLoading) {
     return (
@@ -130,7 +165,7 @@ function Home() {
             Currently a flat dark tint over the whole hero. Adjust "bg-foreground/60" (e.g. /40, /70)
             to make it lighter or darker, or swap for a gradient like the old
             "bg-gradient-to-r from-foreground/50 via-foreground/20 to-transparent" if preferred. */}
-        <div className="absolute inset-0 bg-foreground/60" />
+        <div className="absolute inset-0 bg-foreground/10" />
 
         {/* CTA — centered at the bottom of the hero on all screen sizes, no text/heading above it */}
         <div className="px-2 absolute inset-x-0 bottom-6 flex justify-center px-4 md:bottom-10">
@@ -181,6 +216,16 @@ function Home() {
         </div>
       </section>
 
+      {/* BRAND STATEMENT — no products, just identity. This is the page's quiet, confident
+          "thesis" moment: large editorial type, generous space, nothing competing for attention. */}
+      <section className="px-4 py-20 text-center md:px-8 md:py-28">
+        <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">The Mood Clothings Ethos</p>
+        <p className="mx-auto mt-6 max-w-3xl font-display text-3xl italic leading-snug md:text-5xl">
+          Everyday dressing deserves the same intention as your best occasionwear —
+          considered fabric, honest fit, and pieces built to be worn, not just owned.
+        </p>
+      </section>
+
       {/* Editorial banner */}
       <section className="px-2 my-16 rounded-lg bg-secondary p-6 md:p-12 md:px-8">
         <div className="grid gap-8 md:grid-cols-2 md:items-center">
@@ -206,6 +251,36 @@ function Home() {
           <Link to="/collection" className="inline-flex items-center gap-2 border border-foreground bg-background px-6 py-3 text-[11px] uppercase tracking-widest hover:bg-foreground hover:text-background">
             See Our New Collection <ArrowUpRight className="h-3 w-3" />
           </Link>
+        </div>
+      </section>
+
+      {/* SHOP THE MOOD — curated feeling-based tiles layered over your existing catalog data.
+          Reuses the same lookup pattern as the category carousel below; no new product logic. */}
+      <section className="px-2 py-12 md:px-8">
+        <div className="mb-8">
+          <h2 className="font-display text-3xl md:text-4xl">Shop The Mood</h2>
+          <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">Curated by feeling, not just category</p>
+        </div>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+          {SUBCATEGORIES.slice(0, 4).map((s, i) => (
+            <Link
+              key={s.slug}
+              to="/shop/$gender/$sub"
+              params={{ gender: CATEGORIES[i % CATEGORIES.length].slug, sub: s.slug }}
+              className="group relative block overflow-hidden rounded-md bg-secondary aspect-[3/4]"
+            >
+              <img
+                src={combinedProducts.find((p) => p.sub === s.slug)?.images[0] ?? combinedProducts[0]?.images[0]}
+                alt={MOOD_LABELS[i] ?? s.label}
+                loading="lazy"
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 will-change-transform"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4 text-background">
+                <p className="font-display text-lg italic md:text-xl">{MOOD_LABELS[i] ?? s.label}</p>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
 
@@ -258,6 +333,28 @@ function Home() {
         </div>
       </section>
 
+      {/* TRUST BAR — quiet reassurance, static content, no data dependency */}
+      <section className="border-y border-hairline px-2 py-10 md:px-8">
+        <div className="grid grid-cols-2 gap-6 text-center md:grid-cols-4">
+          <div className="flex flex-col items-center gap-2">
+            <Truck className="h-5 w-5 text-foreground" />
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Free shipping over ₦1,500</p>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <RefreshCcw className="h-5 w-5 text-foreground" />
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">7-day easy returns</p>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-foreground" />
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Secure checkout</p>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <Sparkles className="h-5 w-5 text-foreground" />
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">New arrivals weekly</p>
+          </div>
+        </div>
+      </section>
+
       {/* DISCOVER MORE PIECES: Minimalist 8 Random product shuffle loop array showcase grid */}
       <section className="px-2 py-16 border-t border-hairline md:px-8">
         <div className="mb-8">
@@ -270,7 +367,62 @@ function Home() {
             <ProductCard key={p.id || p._id} product={p} />
           ))}
         </div>
-      </section>1
+      </section>
+
+      {/* SECOND EDITORIAL MOMENT — mirrored layout (image left, text right) for visual rhythm,
+          different image and destination from the first editorial banner above */}
+      <section className="px-2 my-16 rounded-lg bg-secondary p-6 md:p-12 md:px-8">
+        <div className="grid gap-8 md:grid-cols-2 md:items-center">
+          <div className="relative order-2 overflow-hidden rounded-md md:order-1">
+            <img
+              src="https://images.unsplash.com/photo-1445205170230-053b83016050?w=1200&h=800&fit=crop&auto=format&q=75"
+              alt="Custom tailoring detail"
+              loading="lazy"
+              className="h-72 w-full object-cover md:h-96"
+            />
+          </div>
+          <div className="order-1 md:order-2">
+            <h2 className="font-display text-3xl md:text-5xl">Design something entirely your own</h2>
+            <p className="mt-4 max-w-md text-sm text-muted-foreground">
+              From fabric to fit, our custom design service brings your vision to life —
+              tailored to you, made to last.
+            </p>
+            <Link
+              to="/custom-design"
+              className="mt-6 inline-flex items-center gap-2 border border-foreground bg-background px-6 py-3 text-[11px] uppercase tracking-widest hover:bg-foreground hover:text-background"
+            >
+              Start Your Design <ArrowUpRight className="h-3 w-3" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* INLINE NEWSLETTER — always-available signup for anyone who scrolled past or dismissed
+          the timed popup. Full-width dark band gives the page a strong closing note. */}
+      <section className="mx-2 mb-16 rounded-lg bg-foreground px-6 py-14 text-center text-background md:mx-8 md:px-12">
+        <p className="text-[11px] uppercase tracking-[0.25em] opacity-70">Stay In The Loop</p>
+        <h2 className="mt-3 font-display text-3xl md:text-4xl">Join the Mood Clothings list</h2>
+        <p className="mx-auto mt-3 max-w-md text-sm opacity-80">
+          New arrivals, early access, and offers — straight to your inbox.
+        </p>
+        <form onSubmit={handleNewsletterSubmit} className="mx-auto mt-6 flex max-w-md flex-col gap-3 sm:flex-row">
+          <input
+            required
+            type="email"
+            placeholder="Email address"
+            value={newsletterEmail}
+            onChange={(e) => setNewsletterEmail(e.target.value)}
+            className="w-full border border-background/30 bg-transparent px-4 py-3 text-sm text-background placeholder:text-background/60 outline-none focus:border-background"
+          />
+          <button
+            type="submit"
+            disabled={newsletterSending}
+            className="shrink-0 bg-background px-6 py-3 text-xs uppercase tracking-widest text-foreground transition-transform hover:scale-[1.02] disabled:opacity-50"
+          >
+            {newsletterSending ? "Subscribing..." : "Subscribe"}
+          </button>
+        </form>
+      </section>
 
       <RecentlyViewed />
     </div>

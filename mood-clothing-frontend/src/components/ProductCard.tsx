@@ -13,6 +13,10 @@ export function ProductCard({ product }: { product: Product }) {
     return "₦" + Number(amount).toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
 
+  // Second image (if the product has one) swaps in on hover — a common, expected motion
+  // cue on fashion sites that gives a quick second look without leaving the grid.
+  const hasSecondImage = product.images.length > 1;
+
   return (
     // Added an ultra-thin border frame, discrete rounded corners, and padding layout values
     <div className="group card-lift border border-hairline/60 rounded-lg p-2 bg-background">
@@ -26,11 +30,23 @@ export function ProductCard({ product }: { product: Product }) {
             src={product.images[0]}
             alt={product.name}
             loading="lazy"
-            className="product-img transition-transform duration-500 group-hover:scale-[1.03]"
+            className={cn(
+              "product-img transition-opacity duration-500",
+              hasSecondImage && "group-hover:opacity-0"
+            )}
           />
+          {hasSecondImage && (
+            <img
+              src={product.images[1]}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              className="product-img absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+            />
+          )}
         </Link>
         {product.badge && (
-          <span className="absolute left-3 top-3 bg-gray-200 px-2 py-1 text-[12px] uppercase tracking-widest">
+          <span className="absolute left-3 top-3 bg-background/90 backdrop-blur px-2 py-1 text-[11px] uppercase tracking-widest text-foreground border border-hairline">
             {product.badge}
           </span>
         )}
@@ -44,7 +60,7 @@ export function ProductCard({ product }: { product: Product }) {
         <button
           onClick={(e) => { e.preventDefault(); addToCart(product.id, product.colors[0]); }}
           aria-label="Add to cart"
-          className="absolute bottom-3 right-3 grid h-10 w-10 place-items-center rounded-full bg-foreground text-background opacity-0 transition-all duration-300 group-hover:opacity-100 hover:scale-110"
+          className="absolute bottom-3 right-3 grid h-10 w-10 place-items-center rounded-full bg-foreground text-background opacity-100 transition-all duration-300 hover:scale-110 md:opacity-0 md:group-hover:opacity-100"
         >
           <ShoppingBag className="h-4 w-4" />
         </button>
@@ -52,7 +68,7 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="mt-4 flex items-start justify-between gap-3 px-1 pb-1">
         <div className="min-w-0">
           {/* Scaled text typography layout from text-xs to text-sm */}
-          <Link to="/product/$id" params={{ id: product.id }} className="block truncate text-xs font-medium uppercase tracking-widest text-foreground lg:text-sm">
+          <Link to="/product/$id" params={{ id: product.id }} className="block truncate text-xs font-normal uppercase tracking-widest text-foreground/90 lg:text-sm">
             {product.name}
           </Link>
           <div className="mt-2 flex gap-1.5">
