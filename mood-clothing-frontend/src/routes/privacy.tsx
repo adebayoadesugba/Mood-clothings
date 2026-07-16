@@ -34,7 +34,7 @@ function PrivacyPage() {
         <ul className="mt-3 list-disc space-y-2 pl-5">
           <li><strong>Account data:</strong> name, email, phone number, shipping and billing addresses.</li>
           <li><strong>Order data:</strong> items purchased, order value, delivery preferences.</li>
-          <li><strong>Payment data:</strong> processed securely by Paypal we never store your full card number.</li>
+          <li><strong>Payment data:</strong> processed securely by Paystack we never store your full card number.</li>
           <li><strong>Usage data:</strong> pages viewed, products browsed, device and browser information.</li>
         </ul>
 

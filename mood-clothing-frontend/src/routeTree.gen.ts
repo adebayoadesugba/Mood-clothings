@@ -19,12 +19,13 @@ import { Route as FaqRouteImport } from './routes/faq'
 import { Route as CustomDesignRouteImport } from './routes/custom-design'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CollectionRouteImport } from './routes/collection'
-import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CheckoutIndexRouteImport } from './routes/checkout.index'
 import { Route as ShopGenderRouteImport } from './routes/shop.$gender'
 import { Route as ResetPasswordTokenRouteImport } from './routes/reset-password.$token'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
+import { Route as CheckoutCallbackRouteImport } from './routes/checkout.callback'
 import { Route as ShopGenderSubRouteImport } from './routes/shop.$gender.$sub'
 
 const WishlistRoute = WishlistRouteImport.update({
@@ -78,11 +79,6 @@ const CollectionRoute = CollectionRouteImport.update({
   path: '/collection',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CheckoutRoute = CheckoutRouteImport.update({
-  id: '/checkout',
-  path: '/checkout',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -91,6 +87,11 @@ const AboutRoute = AboutRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutIndexRoute = CheckoutIndexRouteImport.update({
+  id: '/checkout/',
+  path: '/checkout/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShopGenderRoute = ShopGenderRouteImport.update({
@@ -108,6 +109,11 @@ const ProductIdRoute = ProductIdRouteImport.update({
   path: '/product/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutCallbackRoute = CheckoutCallbackRouteImport.update({
+  id: '/checkout/callback',
+  path: '/checkout/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShopGenderSubRoute = ShopGenderSubRouteImport.update({
   id: '/$sub',
   path: '/$sub',
@@ -117,7 +123,6 @@ const ShopGenderSubRoute = ShopGenderSubRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/checkout': typeof CheckoutRoute
   '/collection': typeof CollectionRoute
   '/contact': typeof ContactRoute
   '/custom-design': typeof CustomDesignRoute
@@ -128,15 +133,16 @@ export interface FileRoutesByFullPath {
   '/richard-clothings-real-admin': typeof RichardClothingsRealAdminRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wishlist': typeof WishlistRoute
+  '/checkout/callback': typeof CheckoutCallbackRoute
   '/product/$id': typeof ProductIdRoute
   '/reset-password/$token': typeof ResetPasswordTokenRoute
   '/shop/$gender': typeof ShopGenderRouteWithChildren
+  '/checkout/': typeof CheckoutIndexRoute
   '/shop/$gender/$sub': typeof ShopGenderSubRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/checkout': typeof CheckoutRoute
   '/collection': typeof CollectionRoute
   '/contact': typeof ContactRoute
   '/custom-design': typeof CustomDesignRoute
@@ -147,16 +153,17 @@ export interface FileRoutesByTo {
   '/richard-clothings-real-admin': typeof RichardClothingsRealAdminRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wishlist': typeof WishlistRoute
+  '/checkout/callback': typeof CheckoutCallbackRoute
   '/product/$id': typeof ProductIdRoute
   '/reset-password/$token': typeof ResetPasswordTokenRoute
   '/shop/$gender': typeof ShopGenderRouteWithChildren
+  '/checkout': typeof CheckoutIndexRoute
   '/shop/$gender/$sub': typeof ShopGenderSubRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/checkout': typeof CheckoutRoute
   '/collection': typeof CollectionRoute
   '/contact': typeof ContactRoute
   '/custom-design': typeof CustomDesignRoute
@@ -167,9 +174,11 @@ export interface FileRoutesById {
   '/richard-clothings-real-admin': typeof RichardClothingsRealAdminRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/wishlist': typeof WishlistRoute
+  '/checkout/callback': typeof CheckoutCallbackRoute
   '/product/$id': typeof ProductIdRoute
   '/reset-password/$token': typeof ResetPasswordTokenRoute
   '/shop/$gender': typeof ShopGenderRouteWithChildren
+  '/checkout/': typeof CheckoutIndexRoute
   '/shop/$gender/$sub': typeof ShopGenderSubRoute
 }
 export interface FileRouteTypes {
@@ -177,7 +186,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
-    | '/checkout'
     | '/collection'
     | '/contact'
     | '/custom-design'
@@ -188,15 +196,16 @@ export interface FileRouteTypes {
     | '/richard-clothings-real-admin'
     | '/sitemap.xml'
     | '/wishlist'
+    | '/checkout/callback'
     | '/product/$id'
     | '/reset-password/$token'
     | '/shop/$gender'
+    | '/checkout/'
     | '/shop/$gender/$sub'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
-    | '/checkout'
     | '/collection'
     | '/contact'
     | '/custom-design'
@@ -207,15 +216,16 @@ export interface FileRouteTypes {
     | '/richard-clothings-real-admin'
     | '/sitemap.xml'
     | '/wishlist'
+    | '/checkout/callback'
     | '/product/$id'
     | '/reset-password/$token'
     | '/shop/$gender'
+    | '/checkout'
     | '/shop/$gender/$sub'
   id:
     | '__root__'
     | '/'
     | '/about'
-    | '/checkout'
     | '/collection'
     | '/contact'
     | '/custom-design'
@@ -226,16 +236,17 @@ export interface FileRouteTypes {
     | '/richard-clothings-real-admin'
     | '/sitemap.xml'
     | '/wishlist'
+    | '/checkout/callback'
     | '/product/$id'
     | '/reset-password/$token'
     | '/shop/$gender'
+    | '/checkout/'
     | '/shop/$gender/$sub'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  CheckoutRoute: typeof CheckoutRoute
   CollectionRoute: typeof CollectionRoute
   ContactRoute: typeof ContactRoute
   CustomDesignRoute: typeof CustomDesignRoute
@@ -246,9 +257,11 @@ export interface RootRouteChildren {
   RichardClothingsRealAdminRoute: typeof RichardClothingsRealAdminRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   WishlistRoute: typeof WishlistRoute
+  CheckoutCallbackRoute: typeof CheckoutCallbackRoute
   ProductIdRoute: typeof ProductIdRoute
   ResetPasswordTokenRoute: typeof ResetPasswordTokenRoute
   ShopGenderRoute: typeof ShopGenderRouteWithChildren
+  CheckoutIndexRoute: typeof CheckoutIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -323,13 +336,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CollectionRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/checkout': {
-      id: '/checkout'
-      path: '/checkout'
-      fullPath: '/checkout'
-      preLoaderRoute: typeof CheckoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -342,6 +348,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout/': {
+      id: '/checkout/'
+      path: '/checkout'
+      fullPath: '/checkout/'
+      preLoaderRoute: typeof CheckoutIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/shop/$gender': {
@@ -363,6 +376,13 @@ declare module '@tanstack/react-router' {
       path: '/product/$id'
       fullPath: '/product/$id'
       preLoaderRoute: typeof ProductIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout/callback': {
+      id: '/checkout/callback'
+      path: '/checkout/callback'
+      fullPath: '/checkout/callback'
+      preLoaderRoute: typeof CheckoutCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/shop/$gender/$sub': {
@@ -390,7 +410,6 @@ const ShopGenderRouteWithChildren = ShopGenderRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  CheckoutRoute: CheckoutRoute,
   CollectionRoute: CollectionRoute,
   ContactRoute: ContactRoute,
   CustomDesignRoute: CustomDesignRoute,
@@ -401,9 +420,11 @@ const rootRouteChildren: RootRouteChildren = {
   RichardClothingsRealAdminRoute: RichardClothingsRealAdminRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   WishlistRoute: WishlistRoute,
+  CheckoutCallbackRoute: CheckoutCallbackRoute,
   ProductIdRoute: ProductIdRoute,
   ResetPasswordTokenRoute: ResetPasswordTokenRoute,
   ShopGenderRoute: ShopGenderRouteWithChildren,
+  CheckoutIndexRoute: CheckoutIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

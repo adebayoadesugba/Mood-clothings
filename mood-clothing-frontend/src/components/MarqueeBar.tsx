@@ -1,10 +1,11 @@
 // PROMOTIONAL MARQUEE: edit the strings below any time — nothing else needs to change.
 // They scroll continuously left, loop seamlessly, and pause on hover (desktop only).
 const MARQUEE_ITEMS = [
-  "FREE SHIPPING ON ORDERS OVER ₦1,500",
+  "FAST DELIVERY",
   "NEW ARRIVALS EVERY WEEK",
   "7-DAY EASY RETURNS",
   "SECURE CHECKOUT · CUSTOM DESIGN AVAILABLE",
+  "MOOD CLOTHINGS · ",
 ];
 
 export function MarqueeBar() {

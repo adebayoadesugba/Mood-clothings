@@ -221,7 +221,7 @@ function Home() {
       <section className="px-4 py-20 text-center md:px-8 md:py-28">
         <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">The Mood Clothings Ethos</p>
         <p className="mx-auto mt-6 max-w-3xl font-display text-3xl italic leading-snug md:text-5xl">
-          Everyday dressing deserves the same intention as your best occasionwear —
+          Everyday dressing deserves the same intention as your best occasion wear
           considered fabric, honest fit, and pieces built to be worn, not just owned.
         </p>
       </section>
@@ -338,7 +338,7 @@ function Home() {
         <div className="grid grid-cols-2 gap-6 text-center md:grid-cols-4">
           <div className="flex flex-col items-center gap-2">
             <Truck className="h-5 w-5 text-foreground" />
-            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Free shipping over ₦1,500</p>
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Fast Delivery</p>
           </div>
           <div className="flex flex-col items-center gap-2">
             <RefreshCcw className="h-5 w-5 text-foreground" />
@@ -384,7 +384,7 @@ function Home() {
           <div className="order-1 md:order-2">
             <h2 className="font-display text-3xl md:text-5xl">Design something entirely your own</h2>
             <p className="mt-4 max-w-md text-sm text-muted-foreground">
-              From fabric to fit, our custom design service brings your vision to life —
+              From fabric to fit, our custom design service brings your vision to life
               tailored to you, made to last.
             </p>
             <Link
