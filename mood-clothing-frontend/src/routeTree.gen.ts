@@ -14,6 +14,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RichardClothingsRealAdminRouteImport } from './routes/richard-clothings-real-admin'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as NewArrivalsRouteImport } from './routes/new-arrivals'
+import { Route as MyOrdersRouteImport } from './routes/my-orders'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as CustomDesignRouteImport } from './routes/custom-design'
@@ -52,6 +53,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const NewArrivalsRoute = NewArrivalsRouteImport.update({
   id: '/new-arrivals',
   path: '/new-arrivals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyOrdersRoute = MyOrdersRouteImport.update({
+  id: '/my-orders',
+  path: '/my-orders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HelpRoute = HelpRouteImport.update({
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/custom-design': typeof CustomDesignRoute
   '/faq': typeof FaqRoute
   '/help': typeof HelpRoute
+  '/my-orders': typeof MyOrdersRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/privacy': typeof PrivacyRoute
   '/richard-clothings-real-admin': typeof RichardClothingsRealAdminRoute
@@ -148,6 +155,7 @@ export interface FileRoutesByTo {
   '/custom-design': typeof CustomDesignRoute
   '/faq': typeof FaqRoute
   '/help': typeof HelpRoute
+  '/my-orders': typeof MyOrdersRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/privacy': typeof PrivacyRoute
   '/richard-clothings-real-admin': typeof RichardClothingsRealAdminRoute
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/custom-design': typeof CustomDesignRoute
   '/faq': typeof FaqRoute
   '/help': typeof HelpRoute
+  '/my-orders': typeof MyOrdersRoute
   '/new-arrivals': typeof NewArrivalsRoute
   '/privacy': typeof PrivacyRoute
   '/richard-clothings-real-admin': typeof RichardClothingsRealAdminRoute
@@ -191,6 +200,7 @@ export interface FileRouteTypes {
     | '/custom-design'
     | '/faq'
     | '/help'
+    | '/my-orders'
     | '/new-arrivals'
     | '/privacy'
     | '/richard-clothings-real-admin'
@@ -211,6 +221,7 @@ export interface FileRouteTypes {
     | '/custom-design'
     | '/faq'
     | '/help'
+    | '/my-orders'
     | '/new-arrivals'
     | '/privacy'
     | '/richard-clothings-real-admin'
@@ -231,6 +242,7 @@ export interface FileRouteTypes {
     | '/custom-design'
     | '/faq'
     | '/help'
+    | '/my-orders'
     | '/new-arrivals'
     | '/privacy'
     | '/richard-clothings-real-admin'
@@ -252,6 +264,7 @@ export interface RootRouteChildren {
   CustomDesignRoute: typeof CustomDesignRoute
   FaqRoute: typeof FaqRoute
   HelpRoute: typeof HelpRoute
+  MyOrdersRoute: typeof MyOrdersRoute
   NewArrivalsRoute: typeof NewArrivalsRoute
   PrivacyRoute: typeof PrivacyRoute
   RichardClothingsRealAdminRoute: typeof RichardClothingsRealAdminRoute
@@ -299,6 +312,13 @@ declare module '@tanstack/react-router' {
       path: '/new-arrivals'
       fullPath: '/new-arrivals'
       preLoaderRoute: typeof NewArrivalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-orders': {
+      id: '/my-orders'
+      path: '/my-orders'
+      fullPath: '/my-orders'
+      preLoaderRoute: typeof MyOrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/help': {
@@ -415,6 +435,7 @@ const rootRouteChildren: RootRouteChildren = {
   CustomDesignRoute: CustomDesignRoute,
   FaqRoute: FaqRoute,
   HelpRoute: HelpRoute,
+  MyOrdersRoute: MyOrdersRoute,
   NewArrivalsRoute: NewArrivalsRoute,
   PrivacyRoute: PrivacyRoute,
   RichardClothingsRealAdminRoute: RichardClothingsRealAdminRoute,

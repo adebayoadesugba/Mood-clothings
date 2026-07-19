@@ -1,4 +1,4 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { Heart, Star, Minus, Plus, Truck, RefreshCcw, ShieldCheck, Ruler, MessageCircle } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -8,7 +8,6 @@ import { PRODUCTS as STATIC_PRODUCTS, related } from "@/lib/products";
 import { convertToSlug } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 
-// Helper function to resolve dynamic products matching a name slug across combined arrays
 const findProductBySlug = (idParam: string, registryProducts: any[] = []) => {
   const allAvailable = [...registryProducts, ...STATIC_PRODUCTS];
   const match = allAvailable.find((p) => p.id === idParam || p._id === idParam || p.databaseId === idParam || convertToSlug(p.name) === idParam);
@@ -19,8 +18,6 @@ const findProductBySlug = (idParam: string, registryProducts: any[] = []) => {
   return match;
 };
 
-// Formats a delivery window as real calendar dates, e.g. "Fri, Jul 18 – Tue, Jul 22",
-// counting only forward from today — no hardcoded dates to go stale.
 const formatDeliveryWindow = (minDays: number, maxDays: number) => {
   const fmt = (d: Date) => d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
   const start = new Date();
@@ -55,13 +52,11 @@ export const Route = createFileRoute("/product/$id")({
 });
 
 const INITIAL_MOCK_REVIEWS = [
-  { name: "Amelia R.", rating: 5, text: "Fit is impeccable and the fabric feels premium. Wearing it constantly." },
-  { name: "Marcus O.", rating: 5, text: "Exactly the silhouette I was hoping for. Shipping was quick." },
-  { name: "Priya N.", rating: 4, text: "Beautiful piece, runs a touch large — sized down and it's perfect." },
+  { name: "Richard E.", rating: 5, text: "Fit is impeccable and the fabric feels premium. Wearing it constantly." },
+  { name: "Adebayo.", rating: 5, text: "Exactly the material I was hoping for and the shipping was quick." },
+  { name: "Tochi.", rating: 4, text: "Beautiful piece, runs a touch large sized down and it's perfect." },
 ];
 
-// Generic size chart (inches) — swap in real per-product measurements later if you want
-// this to vary by item; for now it's a reasonable universal reference.
 const SIZE_CHART = [
   { size: "S", chest: "36-38", length: "27" },
   { size: "M", chest: "39-41", length: "28" },
@@ -69,6 +64,43 @@ const SIZE_CHART = [
   { size: "XL", chest: "45-47", length: "30" },
   { size: "XXL", chest: "48-50", length: "31" },
 ];
+
+// SKELETON LAYOUT: mirrors the real page's gallery + text structure, since almost every
+// part of this specific page genuinely depends on product data (unlike Home/Collection,
+// there's no meaningful "static shell" to show before we know which product this is).
+function ProductPageSkeleton() {
+  return (
+    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
+      <div className="skeleton-block h-3 w-64 rounded" />
+      <div className="mt-6 grid gap-8 md:grid-cols-2 lg:gap-12 items-start">
+        <div className="flex flex-col gap-3">
+          <div className="skeleton-block aspect-[4/5] w-full rounded-sm md:max-h-[580px]" />
+          <div className="flex flex-wrap gap-2.5">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="skeleton-block h-24 w-20 max-md:h-16 max-md:w-12 rounded" />
+            ))}
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div className="skeleton-block h-8 w-3/4 rounded" />
+          <div className="skeleton-block h-4 w-40 rounded" />
+          <div className="skeleton-block h-9 w-32 rounded" />
+          <div className="space-y-2 pt-2">
+            <div className="skeleton-block h-3 w-full rounded" />
+            <div className="skeleton-block h-3 w-5/6 rounded" />
+          </div>
+          <div className="flex gap-2 pt-4">
+            {Array.from({ length: 3 }).map((_, i) => <div key={i} className="skeleton-block h-8 w-8 rounded-full" />)}
+          </div>
+          <div className="flex gap-2 pt-2">
+            {Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton-block h-10 w-14 rounded" />)}
+          </div>
+          <div className="skeleton-block mt-6 h-11 w-full max-w-[300px] rounded" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function ProductPage() {
   const { id } = Route.useParams();
@@ -136,13 +168,29 @@ function ProductPage() {
 
   const deliveryWindow = useMemo(() => formatDeliveryWindow(2, 3), []);
 
-  if (isLoading || !product || product.name === "Mood Clothings" || !product.id) {
+  // FIXED: while data is still loading, show a skeleton matching this page's real
+  // layout instead of a generic spinner.
+  if (isLoading) {
+    return <ProductPageSkeleton />;
+  }
+
+  // FIXED: previously, if a product genuinely didn't exist (bad/stale link, deleted
+  // product, typo'd URL), this fell into the same branch as "still loading" and showed
+  // "Loading Product..." FOREVER, since isLoading had already finished by this point.
+  // Now it shows a real, honest "not found" state instead of an infinite spinner.
+  if (!product || product.name === "Mood Clothings" || !product.id) {
     return (
-      <div className="min-h-[70vh] w-full grid place-items-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 border-[3px] border-hairline border-t-foreground rounded-full animate-spin" />
-          <p className="text-sm uppercase tracking-widest text-muted-foreground font-mono">Loading Product...</p>
-        </div>
+      <div className="mx-auto max-w-[1440px] px-4 py-20 text-center">
+        <h1 className="font-display text-3xl">Product not found</h1>
+        <p className="mt-3 text-sm text-muted-foreground">
+          This item may have been removed or the link may be incorrect.
+        </p>
+        <Link
+          to="/collection"
+          className="mt-8 inline-block bg-foreground px-8 py-3 text-xs uppercase tracking-widest text-background transition-transform hover:scale-[1.02]"
+        >
+          Browse the Collection
+        </Link>
       </div>
     );
   }
@@ -169,7 +217,7 @@ function ProductPage() {
   };
 
   const handleWhatsAppRedirect = () => {
-    const phoneNumber = "2349065623779"; // Nigeria +234
+    const phoneNumber = "2349065623779";
     const message = encodeURIComponent(`Hi Mood Clothings, I am interested in purchasing the "${product.name}" (Color: ${color}, Size: ${size}). Could you assist me with more details?`);
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank", "noopener,noreferrer");
   };
@@ -186,7 +234,6 @@ function ProductPage() {
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 text-lg max-md:text-sm">
-      {/* Scaled-down Breadcrumbs structure wrapper container for mobile viewports */}
       <div className="max-md:text-xs">
         <Breadcrumbs
           items={[
@@ -200,8 +247,6 @@ function ProductPage() {
 
       <div className="mt-6 grid gap-8 md:grid-cols-2 lg:gap-12 items-start">
         <div className="flex flex-col gap-3">
-          {/* Main image now zooms subtly on hover (desktop) — a standard fashion-site cue
-              that a closer look is available without leaving the page */}
           <div className="overflow-hidden bg-secondary rounded-sm max-w-full md:max-h-[580px] flex items-center justify-center group">
             <img
               src={product.images[activeImage]}
@@ -241,26 +286,22 @@ function ProductPage() {
               <span className="text-lg text-muted-foreground max-md:text-xs underline underline-offset-2">{computedRating.toFixed(1)} · {totalReviewsCount} reviews</span>
             </button>
 
-            {/* STOCK INDICATOR — quiet trust signal, reads from stockSizes when available */}
             <span className="flex items-center gap-1.5 text-xs max-md:text-[11px] text-muted-foreground">
               <span className="h-1.5 w-1.5 rounded-full bg-green-600" />
               In Stock
             </span>
           </div>
           
-          <div className="mt-5 font-display text-4xl font-semibold text-foreground font-mono max-md:text-2xl">{formatNaira(product.price)}</div>
+          <div className="mt-5 font-display text-4xl font-semibold text-foreground font-roboto max-md:text-2xl">{formatNaira(product.price)}</div>
           <p className="mt-6 text-lg leading-relaxed text-muted-foreground max-md:text-sm max-md:mt-4">{product.description}</p>
 
-          {/* DELIVERY ESTIMATE — real calendar dates read as more premium and concrete
-              than a generic "2-3 working days" line */}
           <div className="mt-4 flex items-center gap-2 text-sm max-md:text-xs text-muted-foreground">
             <Truck className="h-4 w-4 text-foreground shrink-0" />
             Get it by <span className="text-foreground font-medium">{deliveryWindow}</span>
           </div>
 
-          {/* Color Selector */}
           <div className="mt-8 max-md:mt-5">
-            <div className="text-lg uppercase tracking-widest text-muted-foreground max-md:text-xs">Color</div>
+            <div className="text-lg uppercase tracking-widest text-muted-foreground max-md:text-xs">Select Color</div>
             <div className="mt-2 flex gap-2">
               {product.colors.map((c) => (
                 <button
@@ -274,7 +315,6 @@ function ProductPage() {
             </div>
           </div>
 
-          {/* Size Selector with Heading + Size Guide toggle */}
           <div className="mt-6 max-md:mt-4">
             <div className="flex items-center justify-between">
               <div className="text-lg uppercase tracking-widest text-muted-foreground max-md:text-xs">Select your size</div>
@@ -331,7 +371,6 @@ function ProductPage() {
             </div>
           </div>
 
-          {/* Core Action Layout Blocks */}
           <div className="mt-8 flex flex-col gap-3 max-md:mt-6">
             <div className="flex flex-wrap items-center gap-4 max-md:gap-2">
               <div className="flex items-center border border-hairline bg-background h-11 max-md:h-9 shrink-0">
@@ -378,7 +417,6 @@ function ProductPage() {
         </div>
       </div>
 
-      {/* Reviews */}
       <section id="reviews-section" className="mt-20 max-md:mt-12">
         <h2 className="font-display text-2xl md:text-3xl max-md:text-base">Ratings &amp; Reviews</h2>
         <div className="mt-6 grid gap-6 md:grid-cols-[240px_1fr] max-md:gap-4">
@@ -462,7 +500,6 @@ function ProductPage() {
         </div>
       </section>
 
-      {/* Related Grid displaying exactly 5 shuffled products filtered by Category */}
       <section className="mt-20 max-md:mt-12">
         <h2 className="mb-6 font-display text-2xl md:text-3xl max-md:text-base max-md:mb-4">You may also like</h2>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-6 md:gap-6">
@@ -472,9 +509,6 @@ function ProductPage() {
         </div>
       </section>
 
-      {/* STYLIST PROMPT — fills the gap between the two product grids with something
-          human and useful rather than more products: a direct line to styling help,
-          plus a quiet reinforcement of your service guarantees. */}
       <section className="mt-16 max-md:mt-10 rounded-lg bg-secondary p-8 max-md:p-6 text-center">
         <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">Need A Hand?</p>
         <h3 className="mt-3 font-display text-2xl md:text-3xl max-md:text-xl">Not sure this is the right fit?</h3>

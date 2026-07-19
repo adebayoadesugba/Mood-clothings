@@ -3,9 +3,10 @@ import { ArrowUpRight, Play, ChevronLeft, ChevronRight, Truck, RefreshCcw, Shiel
 import { useMemo, useState, useRef, useEffect } from "react";
 import { ProductCard } from "@/components/ProductCard";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
-import { PRODUCTS as STATIC_PRODUCTS, CATEGORIES, SUBCATEGORIES, type Product } from "@/lib/products";
+import { PRODUCTS as STATIC_PRODUCTS, CATEGORIES, SUBCATEGORIES, getSubcategoriesFor, type Product } from "@/lib/products";
 import { useStore } from "@/lib/store"; 
 import { toast } from "sonner";
+import { SkeletonProductCard } from "@/components/SkeletonProductCard";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -13,12 +14,21 @@ export const Route = createFileRoute("/")({
 
 // HERO VIDEO PLAYLIST: add, remove, or reorder video URLs here.
 // They play in this exact order, then loop back to the first one automatically, forever.
+// OPTIMIZED: f_auto lets Cloudinary auto-serve a more efficient video codec/container where
+// supported, and q_auto picks a smaller file size without a visible quality hit — this can
+// meaningfully cut video weight, which matters a lot on mobile connections.
 const HERO_VIDEOS: string[] = [
-
-  "https://res.cloudinary.com/gam6ajgd/video/upload/v1783625924/MOOD_ADS_yd3ebt.mp4",
-  "https://res.cloudinary.com/gam6ajgd/video/upload/v1783802794/Mood_cap1_mcrasx.mp4",
-  "https://res.cloudinary.com/gam6ajgd/video/upload/v1783623029/Change_call_now_to_SHOP_202607091944_dmexui.mp4",
+  "https://res.cloudinary.com/gam6ajgd/video/upload/f_auto,q_auto/v1783625924/MOOD_ADS_yd3ebt.mp4",
+  "https://res.cloudinary.com/gam6ajgd/video/upload/f_auto,q_auto/v1783802794/Mood_cap1_mcrasx.mp4",
+  "https://res.cloudinary.com/gam6ajgd/video/upload/f_auto,q_auto/v1783623029/Change_call_now_to_SHOP_202607091944_dmexui.mp4",
 ];
+
+// Cloudinary can generate a still-frame thumbnail directly from a video URL (no separate
+// upload needed) by inserting `so_0` (start-offset 0 seconds) and swapping the extension
+// to .jpg. Using this as a <video poster> means the browser shows a real frame instantly,
+// instead of a blank black box, while the actual video is still buffering.
+const getVideoPoster = (videoUrl: string) =>
+  videoUrl.replace("/video/upload/", "/video/upload/so_0/").replace(/\.mp4$/, ".jpg");
 
 // SHOP THE MOOD: curated captions layered over your existing subcategories/products —
 // no new data model needed, just a different lens on the same catalog. Edit labels freely.
@@ -129,17 +139,10 @@ function Home() {
     }
   };
 
-  // FIXED GLOBAL INTERCEPTOR SKELETON: Displays a geometric rolling spinner ring while network request handles fetch payloads
-  if (isLoading) {
-    return (
-      <div className="min-h-[85vh] w-full grid place-items-center bg-background lg:min-h-[85vh] ">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 border-[3px] border-hairline border-t-foreground rounded-full animate-spin" />
-          <p className="text-sm uppercase tracking-widest text-muted-foreground font-mono lg:text-lg">Welcome To Mood Clothings...</p>
-        </div>
-      </div>
-    );
-  }
+  // FIXED: no more full-page spinner blocking the ENTIRE homepage (hero, intro, brand
+  // statement, etc.) behind the backend product fetch. The page now always renders
+  // immediately; only the two product-grid sections below show skeleton placeholders
+  // while isLoading is true, then swap to real cards once data arrives.
 
   return (
     <div className="mx-auto max-w-[1440px] px-0 md:px-0">
@@ -154,7 +157,11 @@ function Home() {
           autoPlay
           muted
           playsInline
-          preload="auto"
+          // OPTIMIZED: "metadata" only fetches enough to know duration/dimensions, rather
+          // than eagerly downloading a large chunk of the actual video before it's needed —
+          // meaningfully lighter on mobile data than the previous "auto".
+          preload="metadata"
+          poster={getVideoPoster(HERO_VIDEOS[heroVideoIndex])}
           onEnded={handleHeroVideoEnded}
           aria-label="Mood Clothings promotional video"
         >
@@ -167,11 +174,31 @@ function Home() {
             "bg-gradient-to-r from-foreground/50 via-foreground/20 to-transparent" if preferred. */}
         <div className="absolute inset-0 bg-foreground/10" />
 
-        {/* CTA — centered at the bottom of the hero on all screen sizes, no text/heading above it */}
-        <div className="px-2 absolute inset-x-0 bottom-6 flex justify-center px-4 md:bottom-10">
+        {/* HERO TEXT LAYER — a short eyebrow label + one-line headline, each fading up
+            once on page load (staggered via animation-delay), so the hero says something
+            about the brand instead of being pure atmosphere. This does NOT re-trigger
+            when the video loops or advances — only on initial mount, since this text
+            block isn't remounted by the video's key change. */}
+        <div className="px-2 absolute inset-x-0 bottom-6 flex flex-col items-center gap-4 px-4 md:bottom-10 md:gap-6">
+          <div className="text-center text-background">
+            <p
+              className="text-[10px] uppercase tracking-[0.35em] opacity-0 md:text-[11px]"
+              style={{ animation: "slide-up-in 700ms ease-out 150ms forwards" }}
+            >
+              Shop With  Mood Clothings
+            </p>
+            <p
+              className="mt-2 font-display text-2xl italic leading-snug opacity-0 md:text-4xl"
+              style={{ animation: "slide-up-in 700ms ease-out 350ms forwards" }}
+            >
+              Considered fashion, made to be worn
+            </p>
+          </div>
+
           <Link
             to="/collection"
             className="inline-flex items-center gap-2 border border-background/60 bg-background/10 px-6 py-3 text-xs uppercase tracking-widest text-background backdrop-blur transition-transform hover:scale-[1.02]"
+            style={{ animation: "slide-up-in 700ms ease-out 550ms forwards", opacity: 0 }}
           >
             See Collection <ArrowUpRight className="h-4 w-4" />
           </Link>
@@ -206,7 +233,9 @@ function Home() {
         
         {/* Dynamic unified grid layout handles sorting and layouts cleanly */}
         <div className="px-2 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 md:px-8 lg:grid-cols-6">
-          {featured.map((p) => <ProductCard key={p.id} product={p} />)}
+          {isLoading
+            ? Array.from({ length: 6 }).map((_, i) => <SkeletonProductCard key={`skeleton-featured-${i}`} />)
+            : featured.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
 
         <div className="mt-10 text-center">
@@ -221,7 +250,7 @@ function Home() {
       <section className="px-4 py-20 text-center md:px-8 md:py-28">
         <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">The Mood Clothings Ethos</p>
         <p className="mx-auto mt-6 max-w-3xl font-display text-3xl italic leading-snug md:text-5xl">
-          Everyday dressing deserves the same intention as your best occasion wear
+          Everyday dressing deserves the same intention as your best occasion wear we design with care,
           considered fabric, honest fit, and pieces built to be worn, not just owned.
         </p>
       </section>
@@ -262,25 +291,31 @@ function Home() {
           <p className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">Curated by feeling, not just category</p>
         </div>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-          {SUBCATEGORIES.slice(0, 4).map((s, i) => (
-            <Link
-              key={s.slug}
-              to="/shop/$gender/$sub"
-              params={{ gender: CATEGORIES[i % CATEGORIES.length].slug, sub: s.slug }}
-              className="group relative block overflow-hidden rounded-md bg-secondary aspect-[3/4]"
-            >
-              <img
-                src={combinedProducts.find((p) => p.sub === s.slug)?.images[0] ?? combinedProducts[0]?.images[0]}
-                alt={MOOD_LABELS[i] ?? s.label}
-                loading="lazy"
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 will-change-transform"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-transparent" />
-              <div className="absolute bottom-4 left-4 right-4 text-background">
-                <p className="font-display text-lg italic md:text-xl">{MOOD_LABELS[i] ?? s.label}</p>
-              </div>
-            </Link>
-          ))}
+          {SUBCATEGORIES.slice(0, 4).map((s, i) => {
+            // FIXED: previously paired every subcategory with an arbitrary category via
+            // index cycling, regardless of whether that pairing was actually valid (e.g.
+            // "Polo Gown" x "Men"). Now picks a category this subcategory genuinely belongs to.
+            const validGender = s.categories[i % s.categories.length];
+            return (
+              <Link
+                key={s.slug}
+                to="/shop/$gender/$sub"
+                params={{ gender: validGender, sub: s.slug }}
+                className="group relative block overflow-hidden rounded-md bg-secondary aspect-[3/4]"
+              >
+                <img
+                  src={combinedProducts.find((p) => p.sub === s.slug)?.images[0] ?? combinedProducts[0]?.images[0]}
+                  alt={MOOD_LABELS[i] ?? s.label}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 will-change-transform"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4 text-background">
+                  <p className="font-display text-lg italic md:text-xl">{MOOD_LABELS[i] ?? s.label}</p>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -312,24 +347,28 @@ function Home() {
           className="flex gap-4 md:gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           style={{ WebkitOverflowScrolling: "touch" }}
         >
-          {SUBCATEGORIES.map((s, i) => (
-            <Link
-              key={s.slug}
-              to="/shop/$gender/$sub"
-              params={{ gender: CATEGORIES[i % CATEGORIES.length].slug, sub: s.slug }}
-              className="group block overflow-hidden rounded-md bg-secondary snap-start flex-shrink-0 w-[calc(50%-8px)] md:w-[calc(33.333%-16px)] lg:w-[calc(20%-18px)]"
-            >
-              <div className="overflow-hidden aspect-[3/4]">
-                <img
-                  src={combinedProducts.find((p) => p.sub === s.slug)?.images[0] ?? combinedProducts[0]?.images[0]}
-                  alt={s.label}
-                  loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 will-change-transform"
-                />
-              </div>
-              <div className="p-3 text-center text-[11px] uppercase tracking-widest truncate">{s.label}</div>
-            </Link>
-          ))}
+          {SUBCATEGORIES.map((s, i) => {
+            // FIXED: same gender-validity fix as the Shop The Mood tiles above.
+            const validGender = s.categories[i % s.categories.length];
+            return (
+              <Link
+                key={s.slug}
+                to="/shop/$gender/$sub"
+                params={{ gender: validGender, sub: s.slug }}
+                className="group block overflow-hidden rounded-md bg-secondary snap-start flex-shrink-0 w-[calc(50%-8px)] md:w-[calc(33.333%-16px)] lg:w-[calc(20%-18px)]"
+              >
+                <div className="overflow-hidden aspect-[3/4]">
+                  <img
+                    src={combinedProducts.find((p) => p.sub === s.slug)?.images[0] ?? combinedProducts[0]?.images[0]}
+                    alt={s.label}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 will-change-transform"
+                  />
+                </div>
+                <div className="p-3 text-center text-[11px] uppercase tracking-widest truncate">{s.label}</div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -338,7 +377,7 @@ function Home() {
         <div className="grid grid-cols-2 gap-6 text-center md:grid-cols-4">
           <div className="flex flex-col items-center gap-2">
             <Truck className="h-5 w-5 text-foreground" />
-            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Fast Delivery</p>
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Free shipping over ₦1,500</p>
           </div>
           <div className="flex flex-col items-center gap-2">
             <RefreshCcw className="h-5 w-5 text-foreground" />
@@ -363,9 +402,11 @@ function Home() {
         </div>
         
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 lg:grid-cols-6">
-          {randomShowcaseProducts.map((p) => (
-            <ProductCard key={p.id || p._id} product={p} />
-          ))}
+          {isLoading
+            ? Array.from({ length: 6 }).map((_, i) => <SkeletonProductCard key={`skeleton-discover-${i}`} />)
+            : randomShowcaseProducts.map((p) => (
+                <ProductCard key={p.id || p._id} product={p} />
+              ))}
         </div>
       </section>
 
@@ -403,7 +444,7 @@ function Home() {
         <p className="text-[11px] uppercase tracking-[0.25em] opacity-70">Stay In The Loop</p>
         <h2 className="mt-3 font-display text-3xl md:text-4xl">Join the Mood Clothings list</h2>
         <p className="mx-auto mt-3 max-w-md text-sm opacity-80">
-          New arrivals, early access, and offers — straight to your inbox.
+          New arrivals, early access, and offers straight to your inbox.
         </p>
         <form onSubmit={handleNewsletterSubmit} className="mx-auto mt-6 flex max-w-md flex-col gap-3 sm:flex-row">
           <input

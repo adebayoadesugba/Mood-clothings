@@ -6,6 +6,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import { PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
 import { useStore } from "@/lib/store";
+import { SkeletonProductCard } from "@/components/SkeletonProductCard";
 
 export const Route = createFileRoute("/new-arrivals")({
   head: () => ({
@@ -17,7 +18,12 @@ export const Route = createFileRoute("/new-arrivals")({
       { property: "og:type", content: "website" },
       { property: "og:url", content: "/new-arrivals" },
     ],
-    links: [{ rel: "canonical", href: "/new-arrivals" }],
+    links: [
+      { rel: "canonical", href: "/new-arrivals" },
+      // PRELOAD the first hero image so the browser starts fetching it immediately,
+      // before it even finishes parsing the rest of the page's CSS/JS.
+      { rel: "preload", as: "image", href: "https://res.cloudinary.com/gam6ajgd/image/upload/f_auto,q_auto,w_1600/v1783593723/ngxiyhww6xnigtlmbiqb.jpg" },
+    ],
     scripts: [
       {
         type: "application/ld+json",
@@ -37,14 +43,14 @@ export const Route = createFileRoute("/new-arrivals")({
 const MAX = 42;
 
 function NewArrivalsPage() {
+  // OPTIMIZED CLOUDINARY URLS: f_auto/q_auto/w_1600 — smaller, auto-formatted files
   const heroImages = [
-    "https://res.cloudinary.com/gam6ajgd/image/upload/v1783593723/ngxiyhww6xnigtlmbiqb.jpg",
-    "https://res.cloudinary.com/gam6ajgd/image/upload/v1783593510/lyswa7nkacegf649dvfp.jpg"
+    "https://res.cloudinary.com/gam6ajgd/image/upload/f_auto,q_auto,w_1600/v1783593723/ngxiyhww6xnigtlmbiqb.jpg",
+    "https://res.cloudinary.com/gam6ajgd/image/upload/f_auto,q_auto,w_1600/v1783593510/lyswa7nkacegf649dvfp.jpg"
   ];
 
   const [currentImgIdx, setCurrentImgIdx] = useState(0);
 
-  // Smooth cyclical image slide interval timer ticking every 5 seconds
   useEffect(() => {
     const slideTimer = setInterval(() => {
       setCurrentImgIdx((prevIdx) => (prevIdx + 1) % heroImages.length);
@@ -52,63 +58,48 @@ function NewArrivalsPage() {
     return () => clearInterval(slideTimer);
   }, [heroImages.length]);
 
-  // Grab live database products right from global context along with loader flag
   const { PRODUCTS: liveRegistry, isLoading } = useStore();
 
-  // Rank: pieces flagged "New" first, then everything else in catalog order.
-  // Cap at 42 so older items are pushed out as new ones are added.
   const items = useMemo(() => {
     const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
-    
     const withRank = allInventory.map((p, i) => ({
       p,
       rank: (p.badge === "New" ? 0 : 1) * 1000 + i,
     }));
-    
     withRank.sort((a, b) => a.rank - b.rank);
     return withRank.slice(0, MAX).map((x) => x.p);
   }, [liveRegistry]);
 
-  // Intercept view layer to display the spinning ring animation matching requested loader copy text
-  if (isLoading) {
-    return (
-      <div className="min-h-[70vh] w-full grid place-items-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 border-[3px] border-hairline border-t-foreground rounded-full animate-spin" />
-          <p className="text-lg uppercase tracking-widest text-muted-foreground font-mono">new arrival loading</p>
-        </div>
-      </div>
-    );
-  }
-
+  // FIXED: no more full-page spinner blocking the hero + header behind the product fetch.
+  // The page always renders immediately; only the grid below shows skeletons while loading.
   return (
     <div className="w-full text-sm md:text-lg">
-      {/* FIXED HERO COMPONENT: Edge-to-edge full width background frame displaying customized layout metrics */}
       <section className="relative w-full h-[50vh] md:h-[75vh] overflow-hidden bg-foreground">
         {heroImages.map((src, idx) => {
           const isVisible = currentImgIdx === idx;
           return (
-            <div
+            <img
               key={src}
-              className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+              src={src}
+              alt="New arrivals at Mood Clothings"
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
                 isVisible ? "opacity-100 scale-100" : "opacity-0 scale-[1.01]"
               }`}
-              style={{ backgroundImage: `url(${src})`, willChange: "opacity, transform" }}
+              style={{ willChange: "opacity, transform" }}
+              loading={idx === 0 ? "eager" : "lazy"}
+              fetchPriority={idx === 0 ? "high" : "auto"}
+              decoding="async"
             />
           );
         })}
-        {/* Deep overlay shading structure */}
-        <div className="absolute inset-0 bg-black/55 backdrop-blur-[0.5px]" />
-        
-        {/* Large prominent thick collection title overlay plate */}
+        <div className="absolute inset-0 bg-black/70" />
         <div className="absolute inset-0 flex items-center justify-center p-4">
-          <h1 className="text-white font-display text-4xl sm:text-7xl lg:text-8xl font-black uppercase tracking-[0.12em] text-center select-none drop-shadow-2xl">
-            NEW ARRIVALS
+          <h1 className="text-white font-display text-4xl sm:text-7xl lg:text-8xl font-black capitalize tracking-[0.12em] text-center select-none drop-shadow-2xl">
+            New Arrivals
           </h1>
         </div>
       </section>
 
-      {/* Main content grid structural limits mounted back to standard margins */}
       <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-8">
         <Breadcrumbs items={[{ label: "Home", to: "/" }, { label: "New Arrivals" }]} />
 
@@ -126,8 +117,10 @@ function NewArrivalsPage() {
         </header>
 
         <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 lg:grid-cols-6">
-          {items.map((p) => <ProductCard key={p.id} product={p} />)}
-          {items.length === 0 && (
+          {isLoading
+            ? Array.from({ length: 12 }).map((_, i) => <SkeletonProductCard key={`skeleton-${i}`} />)
+            : items.map((p) => <ProductCard key={p.id} product={p} />)}
+          {!isLoading && items.length === 0 && (
             <p className="col-span-full text-xs md:text-sm text-muted-foreground">New pieces will appear here soon.</p>
           )}
         </div>

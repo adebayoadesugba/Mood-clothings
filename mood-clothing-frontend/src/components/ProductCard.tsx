@@ -46,14 +46,14 @@ export function ProductCard({ product }: { product: Product }) {
           )}
         </Link>
         {product.badge && (
-          <span className="absolute left-3 top-3 bg-background/90 backdrop-blur px-2 py-1 text-[11px] uppercase tracking-widest text-foreground border border-hairline">
+          <span className="absolute left-3 top-3 bg-background/90 px-2 py-1 text-[11px] uppercase tracking-widest text-foreground border border-hairline">
             {product.badge}
           </span>
         )}
         <button
           onClick={(e) => { e.preventDefault(); toggleWishlist(product.id); }}
           aria-label={wished ? "Remove from wishlist" : "Add to wishlist"}
-          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/90 backdrop-blur transition-transform hover:scale-110"
+          className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/95 transition-transform hover:scale-110"
         >
           <Heart className={cn("h-4 w-4", wished && "fill-foreground")} />
         </button>
@@ -65,10 +65,10 @@ export function ProductCard({ product }: { product: Product }) {
           <ShoppingBag className="h-4 w-4" />
         </button>
       </div>
-      <div className="mt-4 flex items-start justify-between gap-3 px-1 pb-1">
+      <div className="mt-4  items-start justify-between gap-3 px-1 pb-1">
         <div className="min-w-0">
           {/* Scaled text typography layout from text-xs to text-sm */}
-          <Link to="/product/$id" params={{ id: product.id }} className="block truncate text-xs font-normal uppercase tracking-widest text-foreground/90 lg:text-sm">
+          <Link to="/product/$id" params={{ id: product.id }} className="block truncate text-sm font-normal capitalize -tracking-normal text-foreground/90 lg:text-lg">
             {product.name}
           </Link>
           <div className="mt-2 flex gap-1.5">
@@ -78,7 +78,7 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
         {/* Swapped currency token mapping and scaled metrics output layout weight metrics */}
-        <div className="shrink-0 text-xs font-semibold tabular-nums text-foreground font-mono lg:text-sm">
+        <div className="shrink-0 text-xs font-semibold tabular-nums text-foreground font-roboto lg:text-lg">
           {formatNaira(product.price)}
         </div>
       </div>

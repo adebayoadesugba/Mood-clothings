@@ -1,3 +1,6 @@
+
+ 
+
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
@@ -31,6 +34,7 @@
   --color-hairline: var(--hairline);
   --font-display: "Cormorant Garamond", ui-serif, Georgia, serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-roboto: "Roboto", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
@@ -132,3 +136,15 @@
 
 /* Slide-up entrance used by popups/banners that appear after a delay */
 @keyframes slide-up-in { from { transform: translateY(16px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+
+/* SKELETON SHIMMER: a soft moving highlight across a gray placeholder block, used while
+   real content (product images, prices, names) is still loading from the backend. */
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@utility skeleton-block {
+  background: linear-gradient(90deg, var(--color-secondary) 25%, oklch(0.94 0 0) 50%, var(--color-secondary) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}

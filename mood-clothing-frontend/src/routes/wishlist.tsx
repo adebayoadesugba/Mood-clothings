@@ -3,6 +3,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductCard } from "@/components/ProductCard";
 import { PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
 import { useStore } from "@/lib/store";
+import { SkeletonProductCard } from "@/components/SkeletonProductCard";
 
 export const Route = createFileRoute("/wishlist")({
   head: () => ({ meta: [{ title: "Wishlist — Mood Clothings" }, { name: "description", content: "Your saved Mood Clothings pieces." }] }),
@@ -27,24 +28,22 @@ function WishlistPage() {
       index === self.findIndex((p) => p.id === product.id)
     );
 
-  // FIXED LOADING INTERCEPTOR: Prevents the guest sign-in box from flashing during state initialization
-  if (isLoading) {
-    return (
-      <div className="min-h-[70vh] w-full grid place-items-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 border-[3px] border-hairline border-t-foreground rounded-full animate-spin" />
-          <p className="text-lg uppercase tracking-widest text-muted-foreground font-mono">Loading Your Wish List...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // FIXED: header/breadcrumbs now render immediately regardless of loading state.
+  // Only the body (guest prompt vs. empty state vs. wishlist grid) waits on isLoading —
+  // which is still necessary here specifically, since we genuinely don't know yet
+  // whether to show "please sign in" or a real wishlist until session restoration
+  // (part of isLoading) finishes. Showing skeleton cards during that wait feels far
+  // less jarring than a full-page spinner, and is consistent with the rest of the site.
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-8">
       <Breadcrumbs items={[{ label: "Home", to: "/" }, { label: "Wishlist" }]} />
       <h1 className="mt-6 font-display text-4xl md:text-5xl">My Wishlist</h1>
-      
-      {!user ? (
+
+      {isLoading ? (
+        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 lg:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => <SkeletonProductCard key={`skeleton-${i}`} />)}
+        </div>
+      ) : !user ? (
         /* Guest Authentication Screen */
         <div className="mt-16 text-center max-w-sm mx-auto">
           <p className="text-sm text-muted-foreground leading-relaxed">

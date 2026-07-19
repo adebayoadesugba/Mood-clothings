@@ -5,6 +5,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { RecentlyViewed } from "@/components/RecentlyViewed";
 import { PRODUCTS as STATIC_PRODUCTS, CATEGORIES, SUBCATEGORIES, type Product, type Category, type SubCategory } from "@/lib/products";
 import { useStore } from "@/lib/store";
+import { SkeletonProductCard } from "@/components/SkeletonProductCard";
 
 export const Route = createFileRoute("/collection")({
   head: () => ({
@@ -16,7 +17,11 @@ export const Route = createFileRoute("/collection")({
       { property: "og:type", content: "website" },
       { property: "og:url", content: "/collection" },
     ],
-    links: [{ rel: "canonical", href: "/collection" }],
+    links: [
+      { rel: "canonical", href: "/collection" },
+      // Same LCP fix as New Arrivals: preload the first hero image directly.
+      { rel: "preload", as: "image", href: "https://res.cloudinary.com/gam6ajgd/image/upload/f_auto,q_auto,w_1600/v1783593723/ngxiyhww6xnigtlmbiqb.jpg" },
+    ],
     scripts: [
       {
         type: "application/ld+json",
@@ -54,14 +59,15 @@ function CollectionPage() {
   const [sub, setSub] = useState<Sub>("all");
   const [tag, setTag] = useState<Tag>("all");
 
+  // OPTIMIZED CLOUDINARY URLS: same f_auto/q_auto/w_1600 treatment as New Arrivals —
+  // smaller, auto-formatted files instead of raw full-resolution uploads.
   const heroImages = [
-    "https://res.cloudinary.com/gam6ajgd/image/upload/v1783593723/ngxiyhww6xnigtlmbiqb.jpg",
-    "https://res.cloudinary.com/gam6ajgd/image/upload/v1783593510/lyswa7nkacegf649dvfp.jpg"
+    "https://res.cloudinary.com/gam6ajgd/image/upload/f_auto,q_auto,w_1600/v1783593723/ngxiyhww6xnigtlmbiqb.jpg",
+    "https://res.cloudinary.com/gam6ajgd/image/upload/f_auto,q_auto,w_1600/v1783593510/lyswa7nkacegf649dvfp.jpg"
   ];
 
   const [currentImgIdx, setCurrentImgIdx] = useState(0);
 
-  // Automatic slide cycler ticking smoothly every 5 seconds
   useEffect(() => {
     const slideTimer = setInterval(() => {
       setCurrentImgIdx((prevIdx) => (prevIdx + 1) % heroImages.length);
@@ -69,31 +75,26 @@ function CollectionPage() {
     return () => clearInterval(slideTimer);
   }, [heroImages.length]);
 
-  // Grab live database products right from global context along with loader flag
   const { PRODUCTS: liveRegistry, isLoading } = useStore();
 
   const items = useMemo(() => {
-    // COMBINED INVENTORY PIPELINE: Merges backend live products and static fallback entries safely
     const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
     let list = shuffle(allInventory);
-    
-    // Normalize string comparisons to prevent case mismatches from backend inputs
+
     if (cat !== "all") {
       list = list.filter((p) => p.category?.toLowerCase() === cat.toLowerCase());
     }
-    
+
     if (sub !== "all") {
       list = list.filter((p) => {
         const productSub = p.sub?.toLowerCase() || "";
         const filterSub = sub.toLowerCase();
-        
-        // This handles cases where backend strings are singular/plural matches (e.g., "jean" vs "jeans")
-        return productSub === filterSub || 
-               productSub.startsWith(filterSub) || 
+        return productSub === filterSub ||
+               productSub.startsWith(filterSub) ||
                filterSub.startsWith(productSub);
       });
     }
-    
+
     if (tag === "new") {
       list = list.filter((p) => p.badge?.toLowerCase() === "new");
     } else if (tag === "best") {
@@ -101,50 +102,42 @@ function CollectionPage() {
     } else if (tag === "recommended") {
       list = list.filter((p) => p.rating >= 4.7);
     }
-    
+
     return list;
   }, [cat, sub, tag, liveRegistry]);
 
-  // Intercept render cycle to show a spinning ring animation center-screen while fetching live products
-  if (isLoading) {
-    return (
-      <div className="min-h-[70vh] w-full grid place-items-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 border-[3px] border-hairline border-t-foreground rounded-full animate-spin" />
-          <p className="text-sm uppercase tracking-widest text-muted-foreground font-mono">Loading Collection Drop...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // FIXED: no more full-page spinner blocking the hero + filters behind the product
+  // fetch — the page renders immediately, and only the grid shows skeletons while loading.
   return (
     <div className="w-full text-sm md:text-lg">
-      {/* FIXED HERO COMPONENT: Edge-to-edge full width layout container frame with custom 50vh mobile / 75vh desktop heights */}
+      {/* FIXED HERO: real <img> tags instead of CSS background-image divs — lets the
+          browser discover, prioritize, and preload the first one properly. */}
       <section className="relative w-full h-[50vh] md:h-[75vh] overflow-hidden bg-foreground">
         {heroImages.map((src, idx) => {
           const isVisible = currentImgIdx === idx;
           return (
-            <div
+            <img
               key={src}
-              className={`absolute inset-0 w-full h-full bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+              src={src}
+              alt="The Mood Clothings collection"
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
                 isVisible ? "opacity-100 scale-100" : "opacity-0 scale-[1.01]"
               }`}
-              style={{ backgroundImage: `url(${src})`, willChange: "opacity, transform" }}
+              style={{ willChange: "opacity, transform" }}
+              loading={idx === 0 ? "eager" : "lazy"}
+              fetchPriority={idx === 0 ? "high" : "auto"}
+              decoding="async"
             />
           );
         })}
-        {/* Solid dark protective mask overlay */}
-        <div className="absolute inset-0 bg-black/55 backdrop-blur-[0.5px]" />
-        
-        {/* Large prominent thick collection title overlay */}
+        <div className="absolute inset-0 bg-black/70" />
         <div className="absolute inset-0 flex items-center justify-center p-4">
-          <h1 className="text-white font-display text-4xl sm:text-7xl lg:text-8xl font-black uppercase tracking-[0.12em] text-center select-none drop-shadow-2xl">
+          <h1 className="text-white font-display text-4xl sm:text-7xl lg:text-8xl font-black capitalize tracking-[0.12em] text-center select-none drop-shadow-2xl">
             Collection
           </h1>
         </div>
       </section>
 
-      {/* Main content grid padded back into its standard container margins below the hero boundary */}
       <div className="mx-auto max-w-[1440px] px-4 py-8 md:px-8">
         <Breadcrumbs items={[{ label: "Home", to: "/" }, { label: "Collection" }]} />
 
@@ -181,8 +174,10 @@ function CollectionPage() {
         </div>
 
         <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6 lg:grid-cols-6">
-          {items.map((p) => <ProductCard key={p.id} product={p} />)}
-          {items.length === 0 && (
+          {isLoading
+            ? Array.from({ length: 12 }).map((_, i) => <SkeletonProductCard key={`skeleton-${i}`} />)
+            : items.map((p) => <ProductCard key={p.id} product={p} />)}
+          {!isLoading && items.length === 0 && (
             <p className="col-span-full text-xs md:text-sm text-muted-foreground">No items match those filters yet.</p>
           )}
         </div>

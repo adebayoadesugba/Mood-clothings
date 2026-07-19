@@ -184,7 +184,7 @@ function Checkout() {
                     </div>
                     <div className="mt-0.5 text-sm text-muted-foreground">Qty {item.qty}</div>
                   </div>
-                  <div className="shrink-0 text-lg tabular-nums font-mono">{formatNaira(p.price * item.qty)}</div>
+                  <div className="shrink-0 text-lg tabular-nums font-roboto">{formatNaira(p.price * item.qty)}</div>
                 </li>
               );
             })}
@@ -193,7 +193,7 @@ function Checkout() {
           <div className="mt-6 space-y-2 text-sm border-t border-hairline pt-4">
             <div className="flex justify-between border-t border-hairline pt-2 font-medium text-base lg:text-lg">
               <span>Total</span>
-              <span className="tabular-nums font-mono font-semibold lg:font-bold lg:text-2xl">{formatNaira(totalPreview)}</span>
+              <span className="tabular-nums font-roboto font-semibold lg:font-bold lg:text-2xl">{formatNaira(totalPreview)}</span>
             </div>
           </div>
 
@@ -201,7 +201,7 @@ function Checkout() {
           <div className="mt-4 border border-hairline bg-secondary/50 p-3 text-[11px] leading-relaxed text-muted-foreground">
             <span className="font-medium text-foreground">Delivery fee not included above.</span>{" "}
             A delivery fee of ₦1,000 – ₦5,000 (based on your location) is payable directly to our
-            courier upon arrival — you'll know the exact fee before you accept delivery.
+            courier upon arrival you'll know the exact fee before you accept delivery.
           </div>
         </aside>
 
@@ -238,7 +238,7 @@ function Checkout() {
                 </div>
               </div>
               <p className="text-[11px] italic text-muted-foreground">
-                * Please provide two different numbers where possible — this helps our courier reach you if one line is unavailable.
+                * Please provide two different numbers where possible and at least (1) Whatsapp number. This helps our courier reach you if one line is unavailable.
               </p>
             </div>
           </section>
@@ -253,7 +253,7 @@ function Checkout() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-foreground py-4 text-xs uppercase tracking-widest text-background transition-transform hover:scale-[1.01] disabled:opacity-50 disabled:pointer-events-none font-mono"
+              className="w-full bg-foreground py-4 text-xs uppercase tracking-widest text-background transition-transform hover:scale-[1.01] disabled:opacity-50 disabled:pointer-events-none font-roboto"
             >
               {loading ? "Redirecting to secure payment..." : `Pay ${formatNaira(totalPreview)}`}
             </button>

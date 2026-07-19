@@ -63,7 +63,7 @@ export function CartDrawer() {
                     <div className="flex min-w-0 flex-1 flex-col">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
-                          <div className="truncate text-xs uppercase tracking-widest">{p.name}</div>
+                          <div className="truncate text-sm capitalize tracking-widest">{p.name}</div>
                           
                           <div className="mt-1 flex items-center flex-wrap gap-2 text-[11px] text-muted-foreground">
                             {item.color && (
@@ -75,7 +75,7 @@ export function CartDrawer() {
                             
                             {(item as any).size && (
                               <div className="flex items-center gap-1 before:content-['·'] before:text-muted-foreground/60">
-                                <span className="text-[10px] tracking-wider uppercase bg-secondary px-1.5 py-0.5 font-medium text-foreground">
+                                <span className="text-[10px] tracking-normal capitalize bg-secondary px-1.5 py-0.5 font-medium text-foreground">
                                   Size: {(item as any).size}
                                 </span>
                               </div>
@@ -83,13 +83,13 @@ export function CartDrawer() {
                           </div>
                         </div>
                         {/* Render localized product pricing vector calculations directly into output element */}
-                        <div className="shrink-0 text-sm tabular-nums font-mono">{formatNaira(p.price * item.qty)}</div>
+                        <div className="shrink-0 text-sm tabular-nums font-roboto">{formatNaira(p.price * item.qty)}</div>
                       </div>
                       
                       <div className="mt-auto flex items-center justify-between">
                         <div className="flex items-center border border-hairline">
                           <button type="button" className="grid h-8 w-8 place-items-center" onClick={() => setQty(item.id, item.qty - 1)} aria-label="Decrease"><Minus className="h-3 w-3" /></button>
-                          <span className="w-8 text-center text-xs tabular-nums font-mono">{item.qty}</span>
+                          <span className="w-8 text-center text-xs tabular-nums font-roboto">{item.qty}</span>
                           <button type="button" className="grid h-8 w-8 place-items-center" onClick={() => setQty(item.id, item.qty + 1)} aria-label="Increase"><Plus className="h-3 w-3" /></button>
                         </div>
                         <button type="button" onClick={() => removeFromCart(item.id)} aria-label="Remove" className="text-muted-foreground hover:text-foreground">
@@ -107,14 +107,14 @@ export function CartDrawer() {
         {displayCart.length > 0 && (
           <div className="border-t border-hairline p-5">
             <div className="mb-4 flex items-center justify-between text-sm">
-              <span className="uppercase tracking-widest">Subtotal</span>
+              <span className="uppercase tracking-normal">Subtotal</span>
               {/* Localized cart total metrics parsing layout pipeline */}
-              <span className="tabular-nums font-mono">{formatNaira(cartTotal)}</span>
+              <span className="tabular-nums font-roboto">{formatNaira(cartTotal)}</span>
             </div>
             <Link
               to="/checkout"
               onClick={closeCart}
-              className="block w-full bg-foreground py-3 text-center text-xs uppercase tracking-widest text-background transition-transform hover:scale-[1.01]"
+              className="block w-full bg-foreground py-3 text-center text-xs capitalize tracking-widest text-background transition-transform hover:scale-[1.01]"
             >
               Checkout
             </Link>

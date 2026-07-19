@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { Menu, Search, ShoppingBag, User, X, Heart } from "lucide-react";
+import { Menu, Search, ShoppingBag, User, X, Heart, Instagram, Facebook } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { useStore } from "@/lib/store";
-import { CATEGORIES, SUBCATEGORIES, PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
+import { CATEGORIES, getSubcategoriesFor, PRODUCTS as STATIC_PRODUCTS } from "@/lib/products";
 import { cn } from "@/lib/utils";
 import Logo from "../../public/images/logo.svg";
+
 
 export function Header() {
   const { openSearch, openCart, openLogin, cartCount, user, wishlist, PRODUCTS: liveProducts, isLoading } = useStore();
@@ -34,9 +35,25 @@ export function Header() {
     return activeValidItems.length;
   }, [wishlist, liveProducts]);
 
+  // DYNAMIC MOBILE DRAWER TILE IMAGES: pulls a real product image straight from the live
+  // catalog (falling back to the static list) instead of a hardcoded placeholder file.
+  const combinedProducts = useMemo(() => {
+    return [...(liveProducts || []), ...STATIC_PRODUCTS];
+  }, [liveProducts]);
+
+  const menTshirtImage = useMemo(() => {
+    const match = combinedProducts.find((p) => p.category === "men" && p.sub === "t-shirt");
+    return match?.images?.[0] || "/images/nav-shirt.jpg";
+  }, [combinedProducts]);
+
+  const menCapImage = useMemo(() => {
+    const match = combinedProducts.find((p) => p.category === "men" && p.sub === "mesh-trucker-hat");
+    return match?.images?.[0] || "/images/nav-cap.jpg";
+  }, [combinedProducts]);
+
   return (
     <>
-      <header className="sticky top-0 z-40 bg-background/85 backdrop-blur hairline-b">
+      <header className="sticky top-0 z-40 bg-background/95 hairline-b">
         <div className="mx-auto grid max-w-[1440px] grid-cols-[auto_1fr_auto] items-center gap-4 px-4 py-3 md:px-8 lg:py-1">
           <div className="flex items-center gap-6">
             <button
@@ -46,10 +63,11 @@ export function Header() {
             >
               <Menu className="h-6 w-6" />
             </button>
-            <nav className="hidden items-center gap-6 text-xs uppercase tracking-widest md:flex">
+            <nav className="hidden items-center gap-6 text-sm capitalize tracking-widest md:flex">
               <Link to="/" activeOptions={{ exact: true }} activeProps={{ className: "font-medium" }}>
                 Home
               </Link>
+              
               {CATEGORIES.map((c) => (
                 <div key={c.slug} className="group relative">
                   <Link
@@ -60,7 +78,7 @@ export function Header() {
                     {c.label}
                   </Link>
                   <div className="pointer-events-none invisible absolute left-1/2 top-full z-50 min-w-[200px] -translate-x-1/2 border border-hairline bg-background p-2 opacity-0 transition-opacity duration-200 group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100">
-                    {SUBCATEGORIES.map((s) => (
+                    {getSubcategoriesFor(c.slug).map((s) => (
                       <Link
                         key={s.slug}
                         to="/shop/$gender/$sub"
@@ -74,6 +92,8 @@ export function Header() {
                 </div>
               ))}
               <Link to="/custom-design" className="hover:opacity-70">Custom</Link>
+              <Link to="/wishlist" className="hover:opacity-70">Wishlist</Link>
+              <Link to="/my-orders" className="hover:opacity-70">My Orders</Link>
             </nav>
           </div>
           <Link to="/" className="justify-self-center font-display text-2xl tracking-[0.2em] md:text-3xl">
@@ -138,21 +158,21 @@ export function Header() {
             <button onClick={() => setMobileOpen(false)} aria-label="Close menu"><X className="h-6 w-6" /></button>
           </div>
           <nav className="p-4">
-            <Link to="/" onClick={() => setMobileOpen(false)} className="block py-3.5 text-base uppercase tracking-widest hairline-b">Home</Link>
+            <Link to="/" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm capitalize tracking-widest hairline-b">Home</Link>
             {CATEGORIES.map((c) => (
               <details key={c.slug} className="group hairline-b">
-                <summary className="flex cursor-pointer items-center justify-between py-3.5 text-base uppercase tracking-widest">
+                <summary className="flex cursor-pointer items-center justify-between py-2.5 text-sm capitalize tracking-widest">
                   {c.label}
                   <span className="text-sm">+</span>
                 </summary>
                 <div className="pb-3 pl-3">
-                  {SUBCATEGORIES.map((s) => (
+                  {getSubcategoriesFor(c.slug).map((s) => (
                     <Link
                       key={s.slug}
                       to="/shop/$gender/$sub"
                       params={{ gender: c.slug, sub: s.slug }}
                       onClick={() => setMobileOpen(false)}
-                      className="block py-2.5 text-sm uppercase tracking-widest text-muted-foreground"
+                      className="block py-2.5 text-sm capitalize tracking-widest text-muted-foreground"
                     >
                       {s.label}
                     </Link>
@@ -160,21 +180,81 @@ export function Header() {
                 </div>
               </details>
             ))}
-            <Link to="/custom-design" onClick={() => setMobileOpen(false)} className="block py-3.5 text-base uppercase tracking-widest hairline-b">Custom Design</Link>
-            <Link to="/wishlist" onClick={() => setMobileOpen(false)} className="block py-3.5 text-base uppercase tracking-widest hairline-b">Wishlist</Link>
+            <Link to="/custom-design" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm capitalize tracking-widest hairline-b">Custom Design</Link>
+            <Link to="/wishlist" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm capitalize tracking-widest hairline-b">Wishlist</Link>
+            <Link to="/my-orders" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm capitalize tracking-widest hairline-b">My Orders</Link>
             
-            <Link to="/about" onClick={() => setMobileOpen(false)} className="block py-3.5 text-base uppercase tracking-widest hairline-b text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/about" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm capitalize tracking-widest hairline-b text-muted-foreground hover:text-foreground transition-colors">
               About
             </Link>
-            <Link to="/contact" onClick={() => setMobileOpen(false)} className="block py-3.5 text-base uppercase tracking-widest hairline-b text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/contact" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm capitalize tracking-widest hairline-b text-muted-foreground hover:text-foreground transition-colors">
               Contact
             </Link>
-            <Link to="/help" onClick={() => setMobileOpen(false)} className="block py-3.5 text-base uppercase tracking-widest hairline-b text-muted-foreground hover:text-foreground transition-colors">
+            {/* <Link to="/help" onClick={() => setMobileOpen(false)} className="block py-3.5 text-base uppercase tracking-widest hairline-b text-muted-foreground hover:text-foreground transition-colors">
               Help
-            </Link>
-            <Link to="/faq" onClick={() => setMobileOpen(false)} className="block py-3.5 text-base uppercase tracking-widest hairline-b text-muted-foreground hover:text-foreground transition-colors">
+            </Link> */}
+            <Link to="/faq" onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm capitalize tracking-widest hairline-b text-muted-foreground hover:text-foreground transition-colors">
               FAQ
             </Link>
+          
+
+            {/* Shop-by-category tiles — fills the leftover drawer space below FAQ, mobile only.
+                FIXED: now pulls a real product image from the live catalog (via menTshirtImage /
+                menCapImage above) and links to the correct real subcategory slugs
+                ("t-shirt" and "mesh-trucker-hat") instead of the previous non-existent
+                "shirts"/"caps" slugs, which were silently 404-ing. */}
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <Link
+                to="/shop/$gender/$sub"
+                params={{ gender: "men", sub: "t-shirt" }}
+                onClick={() => setMobileOpen(false)}
+                className="group relative block overflow-hidden rounded-sm aspect-[4/5] w-full"
+              >
+                <img
+                  src={menTshirtImage}
+                  alt="Shop men's t-shirts"
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <span className="absolute inset-x-0 bottom-0 bg-foreground/60 py-1.5 text-center text-[11px] uppercase tracking-normal text-background">
+                  T-shirt
+                </span>
+              </Link>
+              <Link
+                to="/shop/$gender/$sub"
+                params={{ gender: "men", sub: "mesh-trucker-hat" }}
+                onClick={() => setMobileOpen(false)}
+                className="group relative block overflow-hidden rounded-sm aspect-[4/5] w-full"
+              >
+                <img
+                  src={menCapImage}
+                  alt="Shop men's caps"
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <span className="absolute inset-x-0 bottom-0 bg-foreground/60 py-1.5 text-center text-[11px] uppercase tracking-normal text-background">
+                  Cap
+                </span>
+              </Link>
+            </div>
+
+            {/* Logo + socials footer */}
+            <div className="mt-6 flex items-center justify-between border-t border-hairline pt-4">
+              <img src="/images/MOOD CLOTH.png" alt="Mood Clothing" className="h-6 w-auto" />
+              <div className="flex items-center gap-4 text-muted-foreground">
+                <a href="https://instagram.com/moodclothings" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="hover:text-foreground transition-colors">
+                  <Instagram className="h-4 w-4" />
+                </a>
+                <a href="https://facebook.com/moodclothings" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="hover:text-foreground transition-colors">
+                  <Facebook className="h-4 w-4" />
+                </a>
+                <a href="https://tiktok.com/@moodclothings" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className="hover:text-foreground transition-colors">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+                    <path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.592 2.592 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
           </nav>
         </aside>
       </div>

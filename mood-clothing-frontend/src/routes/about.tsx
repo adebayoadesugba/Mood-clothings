@@ -51,12 +51,12 @@ function AboutPage() {
           );
         })}
         {/* Absolute pitch black safety overlay shield matrix wrapper layer mask */}
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px]" />
+        <div className="absolute inset-0 bg-black/70 " />
         
         {/* Prominent centered uppercase display header label plate elements */}
         <div className="absolute inset-0 flex items-center justify-center p-4">
-          <h1 className="text-white font-display text-5xl sm:text-7xl lg:text-8xl font-black uppercase tracking-[0.15em] text-center select-none drop-shadow-lg">
-            About
+          <h1 className="text-white font-display text-5xl sm:text-7xl lg:text-8xl font-Cormorant capitalize tracking-[0.15em] text-center select-none drop-shadow-lg">
+            About Us
           </h1>
         </div>
       </section>

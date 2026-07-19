@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { X, Eye, EyeOff } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { toast } from "sonner";
@@ -200,6 +201,13 @@ export function LoginModal() {
             <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
             
             <div className="mt-8 space-y-3">
+              <Link
+                to="/my-orders"
+                onClick={closeLogin}
+                className="block w-full border border-hairline py-3 text-xs uppercase tracking-widest transition-colors hover:border-foreground"
+              >
+                My Orders
+              </Link>
               <button
                 onClick={() => { logout(); toast.success("Signed out"); }}
                 className="w-full bg-foreground text-background py-3 text-xs uppercase tracking-widest transition-colors border border-foreground hover:bg-transparent hover:text-foreground"

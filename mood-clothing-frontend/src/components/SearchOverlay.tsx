@@ -49,7 +49,7 @@ export function SearchOverlay() {
 
   return (
     <div
-      className="fixed inset-0 z-[60] bg-background/95 backdrop-blur-md"
+      className="fixed inset-0 z-[60] bg-background/95"
       style={{ animation: "overlay-fade 200ms ease-out" }}
       onClick={closeSearch}
     >
@@ -106,15 +106,15 @@ export function SearchOverlay() {
                       type="button"
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleWishlist(p.id); }}
                       aria-label={wished ? "Remove from wishlist" : "Add to wishlist"}
-                      className="absolute right-4 top-4 z-10 grid h-8 w-8 place-items-center rounded-full bg-background/90 backdrop-blur shadow-sm transition-transform hover:scale-110"
+                      className="absolute right-4 top-4 z-10 grid h-8 w-8 place-items-center rounded-full bg-background/90 shadow-sm transition-transform hover:scale-110"
                     >
                       <Heart className={cn("h-3.5 w-3.5 text-foreground transition-colors", wished && "fill-foreground")} />
                     </button>
 
                     <div className="mt-2.5 flex items-baseline justify-between gap-2 px-1 pb-0.5">
-                      <span className="truncate text-xs uppercase tracking-widest text-foreground font-medium">{p.name}</span>
+                      <span className="truncate text-sm capitalize text-foreground font-roboto lg:text-lg">{p.name}</span>
                       {/* Swapped token strings to output format mapping calculations with standard font mono alignments */}
-                      <span className="shrink-0 text-xs tabular-nums font-mono font-semibold text-foreground">{formatNaira(p.price)}</span>
+                      <span className="shrink-0 text-sm tabular-nums font-roboto font-semibold text-foreground lg:text-lg">{formatNaira(p.price)}</span>
                     </div>
                   </div>
                 );
