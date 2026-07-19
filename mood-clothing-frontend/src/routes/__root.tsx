@@ -93,9 +93,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
- 
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&family=Roboto:wght@400;500;600;700&display=swap" },
-      { rel: "icon", href: "/images/MOOD icon.png", type: "image/x-icon" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&family=Roboto:wght@400;500;600;700&display=swap" },      { rel: "icon", href: "/images/MOOD icon.png", type: "image/x-icon" },
     ],
     scripts: [
       { src: "https://accounts.google.com/gsi/client", async: true, defer: true }
@@ -162,6 +160,12 @@ function GoogleAuthInitializer({ children }: { children: ReactNode }) {
         (window as any).google.accounts.id.initialize({
           client_id: googleClientId,
           callback: (window as any).handleGoogleCredentialResponse,
+          // FIXED: opts into FedCM (Federated Credential Management) — Google's newer,
+          // more reliable sign-in system that's replacing the old popup-based flow.
+          // Without this, Chrome (especially on mobile) increasingly refuses to show
+          // the old-style prompt at all, which is exactly the "Google button does
+          // nothing on Chrome mobile" issue this fixes.
+          use_fedcm_for_prompt: true,
         });
         
         (window as any).__googleInitialized = true;
