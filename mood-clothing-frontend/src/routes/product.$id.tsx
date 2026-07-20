@@ -270,7 +270,7 @@ function ProductPage() {
         </div>
 
         <div>
-          <h1 className="font-display text-3xl md:text-4xl max-md:text-xl">{product.name}</h1>
+          <h1 className="font-display capitalize text-3xl md:text-4xl max-md:text-xl">{product.name}</h1>
 
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <button

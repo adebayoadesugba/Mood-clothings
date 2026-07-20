@@ -18,7 +18,11 @@ export const Route = createFileRoute("/")({
 // supported, and q_auto picks a smaller file size without a visible quality hit — this can
 // meaningfully cut video weight, which matters a lot on mobile connections.
 const HERO_VIDEOS: string[] = [
+  
   "https://res.cloudinary.com/gam6ajgd/video/upload/f_auto,q_auto/v1783625924/MOOD_ADS_yd3ebt.mp4",
+  "https://res.cloudinary.com/gam6ajgd/video/upload/v1784568580/Commercial_using_product_images_202607201828_j3yzqm.mp4",
+  "https://res.cloudinary.com/gam6ajgd/video/upload/v1784568580/Product_commercial_with_product___202607201829_bfi9zb.mp4",
+  "https://res.cloudinary.com/gam6ajgd/video/upload/v1784568580/Product_commercial_with_product___202607201828_lkcwlm.mp4",
   "https://res.cloudinary.com/gam6ajgd/video/upload/f_auto,q_auto/v1783802794/Mood_cap1_mcrasx.mp4",
   "https://res.cloudinary.com/gam6ajgd/video/upload/f_auto,q_auto/v1783623029/Change_call_now_to_SHOP_202607091944_dmexui.mp4",
 ];
@@ -266,7 +270,7 @@ function Home() {
           </div>
           <div className="relative overflow-hidden rounded-md">
             <img
-              src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1200&h=800&fit=crop&auto=format&q=75"
+              src="https://res.cloudinary.com/gam6ajgd/image/upload/v1784568225/ChatGPT_Image_Jul_11_2026_05_53_40_PM_gdyisn.png"
               alt="Editorial fashion"
               loading="lazy"
               className="h-72 w-full object-cover md:h-96"
@@ -377,7 +381,7 @@ function Home() {
         <div className="grid grid-cols-2 gap-6 text-center md:grid-cols-4">
           <div className="flex flex-col items-center gap-2">
             <Truck className="h-5 w-5 text-foreground" />
-            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Free shipping over ₦1,500</p>
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Fast Delivery</p>
           </div>
           <div className="flex flex-col items-center gap-2">
             <RefreshCcw className="h-5 w-5 text-foreground" />
@@ -416,7 +420,7 @@ function Home() {
         <div className="grid gap-8 md:grid-cols-2 md:items-center">
           <div className="relative order-2 overflow-hidden rounded-md md:order-1">
             <img
-              src="https://images.unsplash.com/photo-1445205170230-053b83016050?w=1200&h=800&fit=crop&auto=format&q=75"
+              src="https://res.cloudinary.com/gam6ajgd/image/upload/v1784537876/g4zrgbqlldcrf8eveqj0.png"
               alt="Custom tailoring detail"
               loading="lazy"
               className="h-72 w-full object-cover md:h-96"
