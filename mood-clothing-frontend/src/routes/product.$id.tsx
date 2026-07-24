@@ -1,5 +1,5 @@
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
-import { Heart, Star, Minus, Plus, Truck, RefreshCcw, ShieldCheck, Ruler, MessageCircle } from "lucide-react";
+import { Heart, Star, Minus, Plus, Truck, RefreshCcw, ShieldCheck, Ruler, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ProductCard } from "@/components/ProductCard";
@@ -138,6 +138,26 @@ function ProductPage() {
     return "₦" + Number(amount).toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
 
+   const [touchStartX, setTouchStartX] = useState<number | null>(null);
+
+  const goToNextImage = () => {
+    setActiveImage((prev) => (prev + 1) % product.images.length);
+  };
+  const goToPrevImage = () => {
+    setActiveImage((prev) => (prev - 1 + product.images.length) % product.images.length);
+  };
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      diff > 0 ? goToNextImage() : goToPrevImage();
+    }
+    setTouchStartX(null);
+  };
+
   const currentReviews = useMemo(() => {
     if (!product || !product.id) return INITIAL_MOCK_REVIEWS;
     return productReviewsMap[product.id] || INITIAL_MOCK_REVIEWS;
@@ -159,6 +179,8 @@ function ProductPage() {
       (item) => item.category === product.category && item.id !== product.id
     );
 
+
+
     const finalPool = categoryMatches.length >= 5 
       ? categoryMatches 
       : pool.filter((item) => item.id !== product.id);
@@ -173,6 +195,8 @@ function ProductPage() {
   if (isLoading) {
     return <ProductPageSkeleton />;
   }
+
+   
 
   // FIXED: previously, if a product genuinely didn't exist (bad/stale link, deleted
   // product, typo'd URL), this fell into the same branch as "still loading" and showed
@@ -248,12 +272,38 @@ function ProductPage() {
       <div className="mt-6 grid gap-8 md:grid-cols-2 lg:gap-12 items-start">
         <div className="flex flex-col gap-3">
           <div className="overflow-hidden bg-secondary rounded-sm max-w-full md:max-h-[580px] flex items-center justify-center group">
-            <img
-              src={product.images[activeImage]}
-              alt={product.name}
-              className="w-full h-full object-cover md:max-h-[580px] transition-transform duration-500 md:group-hover:scale-105"
-              fetchPriority="high"
-            />
+           <div
+  className="relative overflow-hidden bg-secondary rounded-sm max-w-full md:max-h-[580px] flex items-center justify-center group"
+  onTouchStart={handleTouchStart}
+  onTouchEnd={handleTouchEnd}
+>
+  <img
+    src={product.images[activeImage]}
+    alt={product.name}
+    className="w-full h-full object-cover md:max-h-[580px] transition-transform duration-500 md:group-hover:scale-105"
+    fetchPriority="high"
+  />
+  {product.images.length > 1 && (
+    <>
+      <button
+        type="button"
+        onClick={goToPrevImage}
+        aria-label="Previous image"
+        className="absolute left-2 top-1/2 -translate-y-1/2 grid h-9 w-9 max-md:h-8 max-md:w-8 place-items-center rounded-full bg-background/80 backdrop-blur hover:bg-background transition-colors"
+      >
+        <ChevronLeft className="h-5 w-5 max-md:h-4 max-md:w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={goToNextImage}
+        aria-label="Next image"
+        className="absolute right-2 top-1/2 -translate-y-1/2 grid h-9 w-9 max-md:h-8 max-md:w-8 place-items-center rounded-full bg-background/80 backdrop-blur hover:bg-background transition-colors"
+      >
+        <ChevronRight className="h-5 w-5 max-md:h-4 max-md:w-4" />
+      </button>
+    </>
+  )}
+</div>
           </div>
           <div className="flex flex-wrap gap-2.5">
             {product.images.map((src, i) => (

@@ -16,7 +16,7 @@ export const SUBCATEGORIES: { slug: SubCategory; label: string; categories: Cate
   { slug: "jean", label: "Jean", categories: ["men", "women", "kids"] },
   { slug: "t-shirt", label: "T-Shirt", categories: ["men", "women", "kids"] },
   { slug: "joggers", label: "Joggers", categories: ["men", "women", "kids"] },
-  { slug: "polo", label: "Polo", categories: ["men", "kids"] },
+  { slug: "polo", label: "Polo", categories: ["men", "kids", "women"] },
   { slug: "polo-gown", label: "Polo Gown", categories: ["women", "kids"] },
   { slug: "tracksuit", label: "Track suites", categories: ["men", "women", "kids"] },
   { slug: "hoodies", label: "Hoodies", categories: ["men", "women", "kids"] },
