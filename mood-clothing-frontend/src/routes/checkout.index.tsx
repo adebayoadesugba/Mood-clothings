@@ -50,13 +50,16 @@ function Checkout() {
     try {
       // Map cart items to real product references — no prices sent here at all;
       // the backend looks up current prices from the database itself.
-      const formattedItems = cart.map((item) => {
-        const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
-        const p = allInventory.find(
-          (product) => product.id === item.id || product._id === item.id || product.databaseId === item.id
-        );
+     const formattedItems = cart.map((item) => {
+  const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
+  const p = allInventory.find(
+    (product) => product.id === item.id || product._id === item.id || product.databaseId === item.id
+  );
 
-        if (!p) throw new Error(`Product metadata missing for entry ID: ${item.id}`);
+  if (!p) {
+    throw new Error("One or more items in your cart are no longer available. Please return to your cart and remove them before checking out.");
+  }
+
 
         const mongoId = p.databaseId || p._id;
         if (!mongoId || !/^[0-9a-fA-F]{24}$/.test(mongoId)) {

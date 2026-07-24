@@ -136,7 +136,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       
       const formatted = arrayToMap.map((p: any) => ({
         ...p,
-        id: p.id || convertToSlug(p.name), // Syncs url identifier matching directly into the global array
+        // STABLE IDENTITY FIX: `id` now prefers the Mongo `_id`, which never changes even
+        // if the product is renamed in the admin dashboard. Previously this fell back to
+        // a name-derived slug, which meant renaming a product silently broke any cart,
+        // wishlist, or recently-viewed entry that referenced it — this is what caused the
+        // "Product metadata missing" checkout crash and the stuck cart count.
+        id: p._id || p.id || convertToSlug(p.name),
         databaseId: p._id,
         // FIXED BADGE INTERCEPTOR: Prioritizes valid long tags array entries, otherwise safely reads p.badge text parameters
         badge: p.tags && p.tags.length > 0 && p.tags[0] !== "" ? p.tags[0] : (p.badge || null),
@@ -231,11 +236,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  // Universal look-up pipeline that checks live registry entries (by slug or original hex ID) and static items
+  // Universal look-up pipeline that checks live registry entries (by Mongo _id/databaseId,
+  // or original hex ID) and static items.
   const findProduct = useCallback((id: string) => {
     if (!id) return null;
     const cleanId = id.toString();
-    const liveMatch = liveRegistry.find((p) => p.id === cleanId || p._id === cleanId || p.databaseId === cleanId);
+    const liveMatch = liveRegistry.find(
+      (p) => p.id === cleanId || p._id === cleanId || p.databaseId === cleanId
+    );
     if (liveMatch) return liveMatch;
     return findStaticProduct(cleanId);
   }, [liveRegistry]);
@@ -300,6 +308,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
     return { cartTotal: total, cartCount: count };
   }, [state.cart, findProduct]);
+
+  // AUTO-CLEANUP: once inventory has genuinely finished loading (not mid-fetch, not
+  // pre-hydration), drop any cart items whose product no longer resolves at all — this
+  // only fires for real deletions now, since renames no longer break the lookup.
+  useEffect(() => {
+    if (isInventoryLoading || !isHydrated) return; // don't judge against incomplete data
+    setState((s) => {
+      const staleItems = s.cart.filter((item) => !findProduct(item.id));
+      if (staleItems.length === 0) return s;
+      toast.error(
+        staleItems.length === 1
+          ? "An item in your cart is no longer available and was removed."
+          : `${staleItems.length} items in your cart are no longer available and were removed.`
+      );
+      return { ...s, cart: s.cart.filter((item) => findProduct(item.id)) };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveRegistry, isInventoryLoading, isHydrated]);
 
   // Combined Loading Tracker Parameters: Wait until backend query AND storage reading finish together!
   const isLoadingCombined = !isHydrated || isInventoryLoading;

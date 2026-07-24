@@ -21,6 +21,14 @@ export function CartDrawer() {
 
   const displayCart = cart || [];
 
+// Items whose product no longer exists in the catalog (deleted/renamed in admin)
+const staleCartItems = displayCart.filter((item) => {
+  const allInventory = [...(liveRegistry || []), ...STATIC_PRODUCTS];
+  return !allInventory.some(
+    (product) => product.id === item.id || product._id === item.id || product.databaseId === item.id
+  );
+});
+
   return (
     <div className={cn("fixed inset-0 z-50", cartOpen ? "pointer-events-auto" : "pointer-events-none")} aria-hidden={!cartOpen}>
       <div
@@ -36,6 +44,18 @@ export function CartDrawer() {
       >
         <div className="flex items-center justify-between p-5 hairline-b">
           <h3 className="text-sm uppercase tracking-widest">My Cart ({displayCart.length})</h3>
+          {staleCartItems.length > 0 && (
+  <div className="mx-5 mt-3 flex items-center justify-between gap-3 border border-hairline bg-secondary/50 p-3 text-xs text-muted-foreground">
+    <span>{staleCartItems.length} item(s) in your cart are no longer available.</span>
+    <button
+      type="button"
+      onClick={() => staleCartItems.forEach((item) => removeFromCart(item.id))}
+      className="shrink-0 underline underline-offset-2 hover:text-foreground"
+    >
+      Remove
+    </button>
+  </div>
+)}
           <button onClick={closeCart} aria-label="Close cart"><X className="h-5 w-5" /></button>
         </div>
         
