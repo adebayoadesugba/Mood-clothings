@@ -82,10 +82,7 @@
      - touch-action pan-y explicitly allows normal vertical scrolling while blocking
        horizontal drag gestures
      These apply site-wide and don't affect normal vertical scrolling or button/link taps. */
-  html {
-  overscroll-behavior-x: none;
-  overflow-x: hidden;
-}
+
   body {
     overflow-x: hidden;
     overflow-y: auto;
