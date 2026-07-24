@@ -158,7 +158,7 @@ function Checkout() {
           button. On large screens (lg:), it reverts to the original side-by-side layout
           with the form on the left and summary on the right. */}
       <form onSubmit={handlePlaceOrder} className="mt-8 grid gap-12 lg:grid-cols-[1fr_400px]">
-        <aside className="order-1 lg:order-2 h-fit border border-hairline p-6 bg-background rounded-sm">
+        <aside className="order-1 lg:order-2 h-fit border border-hairline p-3 bg-background rounded-sm">
           <h3 className="text-lg uppercase tracking-widest">Order Summary</h3>
           <ul className="mt-4 divide-y divide-[color:var(--hairline)] max-h-[360px] overflow-y-auto pr-1">
             {cart.map((item) => {
